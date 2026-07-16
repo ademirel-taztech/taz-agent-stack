@@ -130,7 +130,7 @@ Kod değil doküman ürettirmek için aynı disiplinin hafif hattı: **BRAIN →
 
 ## Katkı & yol haritası
 
-Rol eklemek = `.claude/agents/taa-<rol>.md` + `start.md` tablosuna bir satır. Yol haritası: `evals/` (pipeline kalite benchmark'ı — gbrain-evals'ın dürüst skor felsefesiyle), CI ile `agents/`↔`.claude/agents/` senkron kontrolü, PreCompact hook ile otomatik state yedekleme.
+Rol eklemek = `.claude/agents/taa-<rol>.md` + `start.md` tablosuna bir satır + `.claude-plugin/plugin.json` `agents` listesine bir girdi (tek kaynak `.claude/`; plugin manifest'i oradan okur). Yol haritası: `evals/` (pipeline kalite benchmark'ı — gbrain-evals'ın dürüst skor felsefesiyle), PreCompact hook ile otomatik state yedekleme.
 
 ---
 
