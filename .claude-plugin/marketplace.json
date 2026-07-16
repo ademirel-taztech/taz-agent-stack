@@ -1,0 +1,11 @@
+{
+  "name": "taz-marketplace",
+  "owner": { "name": "Taz" },
+  "plugins": [
+    {
+      "name": "taa",
+      "source": ".",
+      "description": "Adversarial gated SDLC pipeline + institutional-memory brain for Claude Code"
+    }
+  ]
+}

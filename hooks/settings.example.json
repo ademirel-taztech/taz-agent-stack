@@ -1,0 +1,13 @@
+{
+  "$comment": "Merge into your project's .claude/settings.json. PostToolUse runs taa-guard after every Write/Edit; exit code 2 blocks and feeds the reason back to the agent.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/taa-guard.sh\"" }
+        ]
+      }
+    ]
+  }
+}

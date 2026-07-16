@@ -1,0 +1,28 @@
+{
+  "$comment": "TAA default MCP set. Copy to .mcp.json at project root (Claude Code) and remove servers you don't use. SECURITY: DB connections read-only user; secrets via env, never inline.",
+  "mcpServers": {
+    "github": {
+      "$comment": "Tier 1 - PO backlog sync, DEV branches/PRs, SEC review comments. Azure DevOps users: swap for an ADO MCP server.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+    },
+    "postgres": {
+      "$comment": "Tier 1 - ARCH real-schema discovery, QA-B migration verification. Use a READ-ONLY database role.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL_READONLY}"]
+    },
+    "playwright": {
+      "$comment": "Tier 1 - QA-B live E2E, WRITER real screenshots, DES mockup-vs-implementation. Point at local/staging only.",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  },
+  "$optional_tier2_tier3": {
+    "sentry": "production errors -> brain evidence & CHECKLIST.md",
+    "context7": "current library docs for ARCH/DEV (kills deprecated-API bugs)",
+    "figma": "DES pulls real design tokens instead of inventing them",
+    "gbrain": "scale backend for the file-based brain (taa-brain auto-prefers it)",
+    "slack_teams": "gate NOTIFICATIONS only - approval itself always stays in-session"
+  }
+}
