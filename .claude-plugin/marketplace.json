@@ -1,6 +1,7 @@
 {
   "name": "taz-marketplace",
   "owner": { "name": "Taz" },
+  "description": "Taz plugins: TAA adversarial gated SDLC pipeline with institutional-memory brain",
   "plugins": [
     {
       "name": "taa",
