@@ -13,7 +13,7 @@ Resolve in this order and state which one you're using:
 2. `./.taa-brain/` (project-local brain)
 3. `~/.taa/brain/` (global cross-project brain)
 
-If none exists and you're asked to write, initialize from `templates/brain/` (or create the structure yourself: `INDEX.md`, `patterns/`, `decisions/`, `findings/`, `lessons/`, `entities/projects/`, `runs/`).
+If none exists and you're asked to write, initialize from `templates/brain/` in the project, else `${CLAUDE_PLUGIN_ROOT}/templates/brain/` when running as a plugin (or create the structure yourself: `INDEX.md`, `patterns/`, `decisions/`, `findings/`, `lessons/`, `entities/projects/`, `runs/`).
 
 ## Page format (strict)
 Every brain page is Markdown with YAML frontmatter (`id`, `type`, `tags`, `links` as typed edges like `used_by: taz-saas-licensing`, `supersedes: PAT-004`, `updated`) and two zones:

@@ -9,9 +9,10 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "${1:-}" == "--global" ]]; then
   DEST="$HOME/.claude"
-  mkdir -p "$DEST/agents" "$DEST/commands/taa"
+  mkdir -p "$DEST/agents" "$DEST/commands/taa" "$DEST/skills"
   cp "$SRC/.claude/agents/"taa-*.md "$DEST/agents/"
   cp "$SRC/.claude/commands/taa/"*.md "$DEST/commands/taa/"
+  cp -R "$SRC/.claude/skills/." "$DEST/skills/"
 mkdir -p "$HOME/.taa/brain" && cp -rn "$SRC/templates/brain/." "$HOME/.taa/brain/" 2>/dev/null || true
 echo "✔ Global TAA Brain initialized at ~/.taa/brain"
   echo "✔ TAA agents & commands installed globally to $DEST"
@@ -22,9 +23,10 @@ fi
 TARGET="${1:?Usage: ./install.sh /path/to/project | --global}"
 [[ -d "$TARGET" ]] || { echo "✖ '$TARGET' is not a directory"; exit 1; }
 
-mkdir -p "$TARGET/.claude/agents" "$TARGET/.claude/commands/taa" "$TARGET/templates/taa"
+mkdir -p "$TARGET/.claude/agents" "$TARGET/.claude/commands/taa" "$TARGET/.claude/skills" "$TARGET/templates/taa"
 cp "$SRC/.claude/agents/"taa-*.md      "$TARGET/.claude/agents/"
 cp "$SRC/.claude/commands/taa/"*.md    "$TARGET/.claude/commands/taa/"
+cp -R "$SRC/.claude/skills/."          "$TARGET/.claude/skills/"
 cp "$SRC/templates/taa/"*.md           "$TARGET/templates/taa/"
 mkdir -p "$TARGET/templates/brain" "$TARGET/scripts" "$TARGET/hooks"
 cp -r "$SRC/templates/brain/." "$TARGET/templates/brain/"

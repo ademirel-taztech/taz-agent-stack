@@ -10,9 +10,10 @@ Adversarial, approval-gated multi-agent development (PO → Designer → Archite
 ## 30 saniyede TAA
 
 ```bash
-git clone https://github.com/<you>/taz-agent-stack && cd taz-agent-stack
-./install.sh /path/to/your/project      # veya --global
-# Claude Code içinde:
+# Claude Code içinde — projenize hiçbir dosya kopyalanmaz:
+/plugin marketplace add <you>/taz-agent-stack
+/plugin install taa@taz-marketplace
+# oturumu yeniden başlatın, sonra:
 /taa:start Lisanslama modülü: tenant bazlı planlar, deneme süresi, Stripe
 ```
 
@@ -67,14 +68,17 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | `/taa:steer` | Chief-of-Staff: anlık sağlık raporu, ihtilaf hakemliği hazırlığı, `portfolio` ile koşular-arası süreç analizi |
 | `/taa:research <soru>` | PM: bağımsız pazar/rakip araştırması, atıflı, brain'e yazılabilir |
 | `/taa:docs <talep>` | Doküman hattı: kullanım manueli, özellik rehberi, release notes, API guide — aynı kapı disiplini, kod-kanıtlı yazım |
+| `/taa:marketing <talep>` | Pazarlama hattı: talebi 46 marketing skill'inden doğrusuna yönlendirir (sosyal post, blog, video senaryosu, launch, SEO, pricing…) — `.taa/` artefaktlarına dayalı, uydurma iddia yok, yayınlama daima insanda |
 
 ## Depo yapısı
 
 ```
 .claude/agents/        10 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-security, taa-brain, taa-chief, taa-writer
-.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research
+.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing
+.claude/skills/        46 marketing skill'i (MIT, Corey Haines) — /taa:marketing bunlara yönlendirir
 scripts/taa-guard.sh   PostToolUse hook — deterministik bloklar
-hooks/settings.example.json
+hooks/hooks.json       plugin kurulumunda guard'ı otomatik aktifleştirir
+hooks/settings.example.json   install.sh yolunda elle merge edilir
 templates/taa/         SPEC / DESIGN / architecture / metrics / backlog / state şablonları
 templates/brain/       brain iskeleti + sayfa şablonu (compiled truth / evidence)
 .claude-plugin/        plugin + marketplace manifestleri
@@ -85,19 +89,22 @@ install.sh
 
 ## Kurulum seçenekleri
 
-```bash
-./install.sh /path/to/project   # önerilen: .claude/ repo ile versiyonlanır
-./install.sh --global           # tüm projeler + ~/.taa/brain global hafıza
-```
-
-Plugin olarak (Claude Code plugin desteğiyle):
+**1. Plugin (önerilen)** — projenize dosya kopyalanmaz; agent'lar, komutlar, TAA Guard hook'u ve şablonlar plugin içinden yüklenir, güncelleme tek komut:
 
 ```bash
 claude plugin marketplace add <you>/taz-agent-stack
-claude plugin install taa
+claude plugin install taa@taz-marketplace
 ```
 
-TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin. Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
+**2. `install.sh` (kopyalayarak)** — plugin kullanmak istemeyenler veya `.claude/`'u repo ile versiyonlamak isteyenler için:
+
+```bash
+git clone https://github.com/<you>/taz-agent-stack && cd taz-agent-stack
+./install.sh /path/to/project   # .claude/ + templates/ + scripts/ hedef projeye kopyalanır
+./install.sh --global           # agents/commands tüm projeler için ~/.claude'a + ~/.taa/brain
+```
+
+Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin (plugin kurulumunda guard otomatik aktiftir). Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
 
 ## Brain: hattın hafızası
 
@@ -124,6 +131,15 @@ Kod değil doküman ürettirmek için aynı disiplinin hafif hattı: **BRAIN →
 /taa:docs release notes v2.4 için, backlog TAA-030..045
 ```
 
+## Pazarlama hattı: `/taa:marketing`
+
+Yazılımı üreten aynı stack onu pazarlar da: [Corey Haines'in marketingskills](https://github.com/coreyhaines31/marketingskills) paketi (MIT) `.claude/skills/` altında **46 skill** olarak gömülü — sosyal post, blog/copywriting, video senaryosu, launch, SEO/AI-SEO, reklam, e-posta/SMS, pricing, CRO, churn, rakip analizi ve dahası. `/taa:marketing <talep>` tek giriş noktasıdır: talebi doğru skill(ler)e yönlendirir ve TAA farkını ekler — **içerik `.taa/` artefaktlarına dayanır** (SPEC'teki gerçek özellikler, RESEARCH'teki rakip konumu, DESIGN.md'nin Voice & Tone'u bağlayıcı), uydurma iddia/metrik yasak (writer'la aynı grounding kuralı), taslaklar `.taa/marketing/` altına düşer, **yayınlamak daima insanın eylemidir.** Skill'ler doğrudan da çağrılabilir (`/social`, `/launch`, `/pricing`…).
+
+```
+/taa:marketing launch: lisanslama modülü v2 — LinkedIn postu + blog + 30sn video senaryosu
+/taa:marketing pricing sayfamızı Van Westendorp'a göre gözden geçir
+```
+
 ## Taz.SaaS / brownfield
 
 `taa-architect` mevcut çözümde önce keşif yapar ve **birebir taklit eder** (klasör düzeni, DI kaydı, isimlendirme, hata yönetimi). Yarışan desen getirmek SEC'te bloklayıcı bulgudur. Greenfield varsayılanları (Clean Architecture, CQRS+MediatR, PostgreSQL/EF Core, Next.js App Router + ShadCN) `CLAUDE.md` ve `taa-architect.md`'de tek yerden değişir — Python/Go/Java ekipleri iki dosya düzenleyerek uyarlar.
@@ -136,10 +152,16 @@ Rol eklemek = `.claude/agents/taa-<rol>.md` + `start.md` tablosuna bir satır + 
 
 ## English quickstart
 
-TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — eight least-privilege subagents (incl. a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 8, recurring findings auto-promoted to a mandatory security checklist) and deterministic PostToolUse guard hooks (secrets, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
+TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — eight least-privilege subagents (incl. a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 8, recurring findings auto-promoted to a mandatory security checklist) and deterministic PostToolUse guard hooks (secrets, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`) and a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills) — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
 
 ```bash
+# recommended — nothing is copied into your project:
+claude plugin marketplace add <you>/taz-agent-stack
+claude plugin install taa@taz-marketplace
+
+# or copy-based:
 ./install.sh /path/to/project    # or --global
+
 /taa:start <your feature request>
 ```
 

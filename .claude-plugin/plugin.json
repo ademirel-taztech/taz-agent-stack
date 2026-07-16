@@ -7,6 +7,7 @@
   "license": "MIT",
   "keywords": ["sdlc", "subagents", "pipeline", "clean-architecture", "cqrs", "nextjs", "memory"],
   "commands": "./.claude/commands",
+  "skills": "./.claude/skills/",
   "agents": [
     "./.claude/agents/taa-architect.md",
     "./.claude/agents/taa-brain.md",

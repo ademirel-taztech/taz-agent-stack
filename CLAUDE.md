@@ -61,3 +61,6 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:research <soru>` — standalone PM market research (cited)
 - `/taa:docs <talep>` — docs track: manuals/guides/release notes with the same gates;
   WRITER's grounding rule: no claim without code/artifact evidence
+- `/taa:marketing <talep>` — marketing track: routes to the bundled marketing skills
+  (social, blog, video, launch, SEO, pricing…), grounded in `.taa/` artifacts;
+  drafts land in `.taa/marketing/`, publishing is always the human's action

@@ -1,0 +1,13 @@
+{
+  "$comment": "Plugin-native TAA Guard: auto-active when the plugin is installed. Manual installs use settings.example.json instead.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/taa-guard.sh\"" }
+        ]
+      }
+    ]
+  }
+}
