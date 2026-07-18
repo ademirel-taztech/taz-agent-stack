@@ -1,11 +1,25 @@
 {
-  "$comment": "Merge into your project's .claude/settings.json. PostToolUse runs taa-guard after every Write/Edit; exit code 2 blocks and feeds the reason back to the agent.",
+  "$comment": "Merge into your project's .claude/settings.json. PreToolUse denies Write/Edit/MultiEdit writes that contain secret shapes before they land; PostToolUse re-checks every Write/Edit/MultiEdit/NotebookEdit afterward as a backstop, and re-scans files changed by Bash (git status) since Bash bypasses the other hooks. Exit code 2 blocks/denies and feeds the reason back to the agent.",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/taa-guard-pretooluse.sh\"" }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
         "hooks": [
           { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/taa-guard.sh\"" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/taa-guard-bash-scan.sh\"" }
         ]
       }
     ]

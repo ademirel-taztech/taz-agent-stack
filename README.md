@@ -11,7 +11,7 @@ Adversarial, approval-gated multi-agent development (PO → Designer → Archite
 
 ```bash
 # Claude Code içinde — projenize hiçbir dosya kopyalanmaz:
-/plugin marketplace add <you>/taz-agent-stack
+/plugin marketplace add ademirel-taztech/taz-agent-stack
 /plugin install taa@taz-marketplace
 # oturumu yeniden başlatın, sonra:
 /taa:start Lisanslama modülü: tenant bazlı planlar, deneme süresi, Stripe
@@ -44,7 +44,7 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | **İnsan onay kapıları** | ✖ | ✔ | ✔ + `düzelt:` notları hafızaya işlenir |
 | **Kalıcı kurumsal hafıza** | ✖ stateless | ✖ run-scoped | ✔ Brain: pattern/ADR/bulgu sayfaları, atıf zorunlu, `/taa:dream` |
 | **Tekrarlanan bulgu ≥2 → otomatik zorunlu kontrol** | ✖ | ✖ | ✔ `findings/CHECKLIST.md`, SEC her incelemede okur |
-| **Deterministik guard'lar** (hook) | ✖ | ✖ | ✔ secret / lorem-ipsum / hard-coded renk / interpolated SQL / orphan TODO → blok |
+| **Deterministik guard'lar** (hook) | ✖ | ✖ | ✔ secret (PreToolUse deny + PostToolUse, `.md`/`.taa` dahil) / lorem-ipsum / hard-coded renk / interpolated SQL / orphan TODO → blok; Bash yazımları da `git status` ile yeniden taranır |
 | Oturum çökse de devam | değişken | kısmi | ✔ `.taa/state.md` + `/taa:continue` |
 | Brownfield saygısı | ✖ | kısmi | ✔ ARCH önce keşif+taklit; yarışan desen = SEC bulgusu |
 | **Kanıt-temelli steering** | ✖ | ✖ | ✔ CHIEF: her kapıdan önce scope-creep/bütçe/risk brief'i; kill-switch analizi; salt tavsiye, yetkisiz |
@@ -72,18 +72,30 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 
 ## Depo yapısı
 
+**Tek doğruluk kaynağı `.claude/`'dur.** Agent'lar, komutlar ve skill'ler
+yalnızca `.claude/agents/`, `.claude/commands/taa/`, `.claude/skills/` altında
+yaşar; `install.sh`, `scripts/convert-to-codex.py` ve `.claude-plugin/plugin.json`
+hepsi buradan okur. Rakip bir kök `agents/`/`commands/` kopyası **tutulmaz** —
+CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'lenmiş
+`codex/agents/` arasında drift olursa build'i kırar.
+
 ```
 .claude/agents/        10 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-security, taa-brain, taa-chief, taa-writer
 .claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing
 .claude/skills/        46 marketing skill'i (MIT, Corey Haines) — /taa:marketing bunlara yönlendirir
-scripts/taa-guard.sh   PostToolUse hook — deterministik bloklar
+scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookEdit) — deterministik bloklar
+scripts/taa-guard-pretooluse.sh PreToolUse hook — secret şekilleri yazılmadan önce reddedilir
+scripts/taa-guard-bash-scan.sh  PostToolUse/Bash hook — Bash'le yazılan dosyaları `git status` ile yeniden tarar
+scripts/taa-guard-secrets.sh    üç script'in paylaştığı secret/PII desenleri
+tests/guard/            saf-bash guard test paketi (bats bağımlılığı yok)
 hooks/hooks.json       plugin kurulumunda guard'ı otomatik aktifleştirir
 hooks/settings.example.json   install.sh yolunda elle merge edilir
 templates/taa/         SPEC / DESIGN / architecture / metrics / backlog / state şablonları
 templates/brain/       brain iskeleti + sayfa şablonu (compiled truth / evidence)
 .claude-plugin/        plugin + marketplace manifestleri
 CLAUDE.md              projeye giden hafıza kuralları
-docs/PIPELINE.md · docs/BRAIN.md
+CHANGELOG.md · CONTRIBUTING.md
+docs/PIPELINE.md · docs/BRAIN.md · docs/MCP.md
 install.sh
 ```
 
@@ -92,19 +104,21 @@ install.sh
 **1. Plugin (önerilen)** — projenize dosya kopyalanmaz; agent'lar, komutlar, TAA Guard hook'u ve şablonlar plugin içinden yüklenir, güncelleme tek komut:
 
 ```bash
-claude plugin marketplace add <you>/taz-agent-stack
+claude plugin marketplace add ademirel-taztech/taz-agent-stack
 claude plugin install taa@taz-marketplace
 ```
 
 **2. `install.sh` (kopyalayarak)** — plugin kullanmak istemeyenler veya `.claude/`'u repo ile versiyonlamak isteyenler için:
 
 ```bash
-git clone https://github.com/<you>/taz-agent-stack && cd taz-agent-stack
+git clone https://github.com/ademirel-taztech/taz-agent-stack && cd taz-agent-stack
 ./install.sh /path/to/project   # .claude/ + templates/ + scripts/ hedef projeye kopyalanır
 ./install.sh --global           # agents/commands tüm projeler için ~/.claude'a + ~/.taa/brain
 ```
 
 Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin (plugin kurulumunda guard otomatik aktiftir). Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
+
+**Önerilen ikinci savunma hattı:** `scripts/install-precommit.sh <repo>` — TAA Guard'ı git `pre-commit` hook'u olarak da kurar. Hook'lar (PreToolUse/PostToolUse) her zaman devrede olsa da, bu ikinci hat hem Codex tarafında (Codex'in native hook mekanizması yok) hem de Claude Code'da hook'ların hiç çalışmadığı senaryolarda (elle `git commit`, harici düzenleyici) son bir güvenlik ağıdır — opsiyonel değil, **önerilir**.
 
 ## Brain: hattın hafızası
 
@@ -146,7 +160,14 @@ Yazılımı üreten aynı stack onu pazarlar da: [Corey Haines'in marketingskill
 
 ## Katkı & yol haritası
 
-Rol eklemek = `.claude/agents/taa-<rol>.md` + `start.md` tablosuna bir satır + `.claude-plugin/plugin.json` `agents` listesine bir girdi (tek kaynak `.claude/`; plugin manifest'i oradan okur). Yol haritası: `evals/` (pipeline kalite benchmark'ı — gbrain-evals'ın dürüst skor felsefesiyle), PreCompact hook ile otomatik state yedekleme.
+Katkı kuralları ve adım adım rehber: [CONTRIBUTING.md](CONTRIBUTING.md). Sürüm
+geçmişi: [CHANGELOG.md](CHANGELOG.md) (Keep a Changelog formatı). Kısaca: rol
+eklemek = `.claude/agents/taa-<rol>.md` + `start.md` tablosuna bir satır +
+`.claude-plugin/plugin.json` `agents` listesine bir girdi (tek kaynak
+`.claude/`; plugin manifest'i oradan okur). Yol haritası: `evals/` (pipeline
+kalite benchmark'ı — gbrain-evals'ın dürüst skor felsefesiyle), PreCompact hook
+ile otomatik state yedekleme, CI drift kontrolü (`convert-to-codex.py` çıktısı
+vs commit'lenmiş `codex/agents/`).
 
 ---
 
@@ -156,7 +177,7 @@ TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code 
 
 ```bash
 # recommended — nothing is copied into your project:
-claude plugin marketplace add <you>/taz-agent-stack
+claude plugin marketplace add ademirel-taztech/taz-agent-stack
 claude plugin install taa@taz-marketplace
 
 # or copy-based:

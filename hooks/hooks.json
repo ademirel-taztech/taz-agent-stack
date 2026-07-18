@@ -1,11 +1,25 @@
 {
   "$comment": "Plugin-native TAA Guard: auto-active when the plugin is installed. Manual installs use settings.example.json instead.",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/taa-guard-pretooluse.sh\"" }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
         "hooks": [
           { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/taa-guard.sh\"" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/taa-guard-bash-scan.sh\"" }
         ]
       }
     ]
