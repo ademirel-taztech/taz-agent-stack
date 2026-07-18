@@ -72,6 +72,12 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | `/taa:marketing <talep>` | Pazarlama hattı: talebi 46 marketing skill'inden doğrusuna yönlendirir (sosyal post, blog, video senaryosu, launch, SEO, pricing…) — `.taa/` artefaktlarına dayalı, uydurma iddia yok, yayınlama daima insanda |
 | `/taa:ingest <dosya\|dizin>...` | xls(x)/doc(x)/pdf/ppt(x)/vsd(x)/csv dosyalarını `.taa/inputs/`'a atıflı Markdown kanıt olarak alır (guard'dan geçer); pipeline dışında da tek başına çalışır |
 | `/taa:report <tür> [format]` | `.taa/` artefaktını (status/steering/review/manual/release-notes) xlsx/docx/pdf/pptx'e derler (`.taa/reports/`); yayınlamak daima insanın işi |
+| `/taa:fix <bug>` | Hafif bugfix hattı: reproduce → test → düzelt → kapsamlı review → brain'e yazım |
+| `/taa:release [sürüm]` | Sürüm önerisi, CHANGELOG/release notes, deploy+rollback planı, tag/PR metni — deploy'un kendisi asla otomatik değil |
+| `/taa:incident <özet\|log>` | Postmortem: zaman çizelgesi, etki, kök neden, aksiyonlar; tekrarlayan bulgu sınıfı `findings/CHECKLIST.md`'ye terfi eder |
+| `/taa:refactor <hedef>` | Davranış-koruyan refactor: karakterizasyon testleri → refactor → SEC diff denetimi; SPEC yerine `.taa/invariants.md` |
+| `/taa:upgrade <paket\|framework>` | ARCH liderliğinde sürüm geçişi: breaking-change araştırması, aşamalı plan ve uygulama |
+| `/taa:onboard [odak]` | Brain + `.taa/` + architecture.md'den atıflı yeni geliştirici oryantasyon dokümanı |
 
 ## Doküman I/O: `/taa:ingest` ve `/taa:report`
 
@@ -101,7 +107,7 @@ CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'len
 
 ```
 .claude/agents/        15 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer
-.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report
+.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard
 .claude/skills/        46 marketing skill'i (MIT, Corey Haines) + doc-ingest + doc-export — /taa:marketing ve /taa:ingest·/taa:report bunlara yönlendirir
 requirements-doc.txt    doc-ingest/doc-export'un opsiyonel pip bağımlılıkları (`./install.sh --with-docs`)
 scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookEdit) — deterministik bloklar

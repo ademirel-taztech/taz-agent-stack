@@ -7,7 +7,9 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 
 1. **Never start coding a feature directly.** New feature/product requests go through
    `/taa:start <request>`. Small bugfixes (< ~20 lines, no new endpoints, no schema
-   change) may skip the pipeline but MUST still pass `/taa:review` before completion.
+   change) may skip the full pipeline via `/taa:fix <bug>` (reproduce → test →
+   fix → scoped review → brain write-back) but MUST still pass `/taa:review`
+   before completion.
 2. **Approval gates are sacred.** After each pipeline stage, stop and wait for the
    human's `onayla` / `düzelt` / `iptal`. Never self-approve, never batch stages.
 3. **`.taa/` is the single source of truth** for the active pipeline:

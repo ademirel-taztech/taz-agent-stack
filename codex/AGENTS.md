@@ -16,7 +16,9 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 
 1. **Never start coding a feature directly.** New feature/product requests go through
    "Run the TAA pipeline for: <request>". Small bugfixes (< ~20 lines, no new endpoints, no schema
-   change) may skip the pipeline but MUST still pass `/taa:review` before completion.
+   change) may skip the full pipeline via the fix track (reproduce → test →
+   fix → scoped review → brain write-back) but MUST still pass `/taa:review`
+   before completion.
 2. **Approval gates are sacred.** After each pipeline stage, stop and wait for the
    human's `onayla` / `düzelt` / `iptal`. Never self-approve, never batch stages.
 3. **`.taa/` is the single source of truth** for the active pipeline:
@@ -74,6 +76,12 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:research <soru>` — standalone PM market research (cited)
 - `/taa:docs <talep>` — docs track: manuals/guides/release notes with the same gates;
   WRITER's grounding rule: no claim without code/artifact evidence
+- `/taa:fix <bug>` — light bugfix track: reproduce → test → fix → scoped review → brain write-back
+- `/taa:release [version]` — version proposal, CHANGELOG/release notes, deploy+rollback plan; never deploys itself
+- `/taa:incident <summary|log>` — postmortem: timeline, impact, root cause, actions; recurring finding classes promote to the mandatory checklist
+- `/taa:refactor <target>` — behavior-preserving refactor: characterization tests, then the refactor, then a SEC diff audit; uses `.taa/invariants.md` instead of SPEC.md
+- `/taa:upgrade <package|framework>` — ARCH-led version migration: breaking-change research, staged plan, staged implementation
+- `/taa:onboard [focus]` — synthesizes a cited onboarding doc from the brain + `.taa/` + architecture.md
 - Doc ingest/export (no skill mechanism in Codex — no `/taa:ingest`/`/taa:report`
   slash commands either): say "Ingest <file> per `.claude/skills/doc-ingest/SKILL.md`"
   or "Export `.taa/<artifact>.md` to <format> per `.claude/skills/doc-export/SKILL.md`" —
