@@ -44,17 +44,19 @@ case "$FILE" in
   *.lock|*node_modules*|*.min.*|*/tests/guard/*|tests/guard/*) exit 0 ;;
 esac
 
-# .md files, the brain directory, generated Codex agent TOMLs, and the
-# guard's own scripts skip the *content-quality* checks below (lorem-ipsum/
-# color/SQL/TODO don't apply to prose, memory pages, or files that must
-# *document* those rules by name — e.g. an agent .md explaining "no lorem
-# ipsum" would otherwise trip its own generated codex/agents/*.toml, and this
-# very script's comments about rule 2 would trip on itself), but they do NOT
-# skip secrets or PII — CLAUDE.md rule 7 bans secrets in ".taa artefactları
-# dahil" (which are all .md), and rule 8 bans PII in the brain.
+# .md files, the brain directory, generated Codex agent TOMLs, the guard's
+# own scripts, and skill eval definitions skip the *content-quality* checks
+# below (lorem-ipsum/color/SQL/TODO don't apply to prose, memory pages, or
+# files that must *document*/*describe* those rules by name — e.g. an agent
+# .md explaining "no lorem ipsum" would otherwise trip its own generated
+# codex/agents/*.toml, this script's own comments about rule 2 would trip on
+# itself, and a skill's evals.json describing a good response as one that
+# "recommends sample data" would trip too), but they do NOT skip secrets or
+# PII — CLAUDE.md rule 7 bans secrets in ".taa artefactları dahil" (which are
+# all .md), and rule 8 bans PII in the brain.
 SKIP_CONTENT_CHECKS=0
 case "$FILE" in
-  *.md|*/.taa-brain/*|*/codex/agents/*.toml|codex/agents/*.toml|*/scripts/taa-guard*.sh|scripts/taa-guard*.sh) SKIP_CONTENT_CHECKS=1 ;;
+  *.md|*/.taa-brain/*|*/codex/agents/*.toml|codex/agents/*.toml|*/scripts/taa-guard*.sh|scripts/taa-guard*.sh|*/evals/evals.json|evals/evals.json) SKIP_CONTENT_CHECKS=1 ;;
 esac
 
 # 1) Secrets — hard block everywhere, including .md/.taa artifacts and tests

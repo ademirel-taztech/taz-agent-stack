@@ -86,6 +86,8 @@ check_exit "tailwind.config.js is exempt from color check" \
   "tailwind.config.js" 'module.exports = { colors: { brand: "#ff00ff" } };' 0
 check_exit "generated codex/agents/*.toml quoting the lorem-ipsum rule by name isn't blocked" \
   "codex/agents/taa_data.toml" 'instructions = """no lorem ipsum, no foo/bar, no dummy data"""' 0
+check_exit "skill evals.json describing 'sample data' as a good recommendation isn't blocked" \
+  ".claude/skills/onboarding/evals/evals.json" '{"expected_output": "Should recommend sample data to show what it looks like populated."}' 0
 
 # --- 4) Interpolated SQL (C#) --------------------------------------------
 check_exit "interpolated raw SQL is BLOCKED" \
