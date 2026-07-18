@@ -52,6 +52,8 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | **Çift motor** | ✖ Claude-only | çoğu tek motor | ✔ Claude Code + OpenAI Codex (`codex/` adaptörü + dönüştürücü) |
 | **Rol-kapsamlı MCP** | global bağlanır | global | ✔ MCP anayasası: rol bazlı en-az-yetki, read-only DB, injection kuralı, dürüst degrade raporu |
 | **Canlı E2E doğrulama** | ✖ | ✖ | ✔ QA-B Playwright MCP ile kabul kriterlerini gerçek UI'da yürür; manuel adımları canlı test edilir |
+| **Ofis dosyası I/O** | ✖ | ✖ | ✔ `/taa:ingest` (xls(x)/doc(x)/pdf/ppt(x)/vsd(x)/csv → atıflı Markdown kanıt) + `/taa:report` (`.taa/` → xlsx/docx/pdf/pptx); dürüst degrade, guard'dan geçer |
+| **Release hattı** | ✖ | ✖ | ✔ Stage 7 `taa-ops` (Dockerfile/CI/migration+rollback/runbook) + `/taa:release` (sürüm, CHANGELOG, deploy checklist) — deploy'un kendisi asla otomatik değil |
 | Kurulum | dosya kopyala | framework öğren | ✔ `install.sh` / plugin; başka stack'e 2 dosyadan uyarlanır |
 
 > Felsefe (gbrain'den ödünç): **mekanik iş koda, muhakeme LLM'e.** Sızıntı yakalamak regex'in işi, mimari karar vermek modelin.

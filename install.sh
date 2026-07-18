@@ -102,8 +102,13 @@ else
   echo "✔ Created CLAUDE.md"
 fi
 
-# .taa working directory is generated at runtime; keep artifacts out of accidental noise
-grep -qxF ".taa/tests/bin/" "$TARGET/.gitignore" 2>/dev/null || true
+# .taa/*.md (state, SPEC, backlog, review, etc.) is meant to be committed as
+# the project's audit trail — but generated binary/regenerable output from
+# doc-ingest/doc-export/the eval harness is noise, not source of truth.
+touch "$TARGET/.gitignore"
+for pattern in ".taa/inputs/" ".taa/reports/" "**/evals/results-*"; do
+  grep -qxF "$pattern" "$TARGET/.gitignore" 2>/dev/null || echo "$pattern" >> "$TARGET/.gitignore"
+done
 
 echo "✔ TAA installed into $TARGET"
 echo "  Next: open the project in Claude Code and run:  /taa:start <your request>"
