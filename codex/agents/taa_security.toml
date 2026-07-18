@@ -27,7 +27,8 @@ Before anything else, read the brain's recurring-findings checklist (`.taa-brain
    - Input: validation on every external input; output encoding; file-upload constraints; SSRF on any outbound URL usage.
    - Headers/config: CORS breadth, cookie flags, error responses leaking internals.
    - Run available analyzers (`dotnet format --verify-no-changes`, `dotnet build -warnaserror` if configured, `npm audit`, linters) and include findings.
-3. **Architecture conformance:** verify DEV honored the ARCH constraint checklist item by item.
+   - **Dependency/secret scan (blend into findings, don't just append raw output):** run whichever of these are available — `dotnet list package --vulnerable`, `npm audit --omit=dev`, `gitleaks detect`, `semgrep --config auto`. For each tool that isn't installed, report "could not be scanned — `<tool>` not installed" explicitly rather than silently omitting that category. Never claim a dependency/secret scan happened if the tool wasn't actually run.
+3. **Architecture conformance:** verify DEV honored the ARCH constraint checklist item by item, and cross-check your own findings against `.taa/architecture.md`'s Threat Model section — every Critical/High finding should map to a listed threat (if it doesn't, flag the Threat Model itself as incomplete, not just the code).
 4. **Documentation (you fix these directly):**
    - XML docs on public APIs, TSDoc on exported functions/components.
    - Swagger/OpenAPI annotations complete and example-bearing for every new endpoint.

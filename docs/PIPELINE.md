@@ -59,6 +59,24 @@ flowchart TD
 - **Skills:** if you maintain Claude Code skills (e.g. team API conventions), preload
   them into a subagent with the `skills:` frontmatter field.
 
+## Multiple concurrent runs
+
+`.taa/state.md` has one **Run ID** per working tree — it's not designed to
+interleave two unrelated feature pipelines at once. For parallel features,
+give each its own `git worktree` (and therefore its own `.taa/`):
+
+```bash
+git worktree add ../myproject-licensing feature/licensing
+cd ../myproject-licensing
+# run /taa:start there — its own .taa/state.md, its own Run ID
+```
+
+Each worktree gets independent gates, independent brain-recall context (the
+brain itself is still shared — it's global/project-scoped, not per-worktree),
+and independent `.taa/` artifacts that merge normally with the feature branch.
+Don't run two `/taa:start` pipelines against the same `.taa/state.md` — the
+orchestrator will refuse and point you here instead.
+
 ## FAQ
 
 **Why not one giant prompt?** A single context degrades as it fills with repo scans and

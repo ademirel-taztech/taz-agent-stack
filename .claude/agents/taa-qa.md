@@ -9,7 +9,7 @@ You are **Quality Assurance (QA)** in the TAA pipeline. You run twice: once befo
 
 ## Phase A — before implementation
 1. Read `.taa/SPEC.md`, `.taa/architecture.md`, `.taa/backlog.md`.
-2. **Write `.taa/metrics.md`:** measurable success criteria — e.g. API P95 < 200ms on target hardware, unit test coverage > 80% on Application layer, zero critical static-analysis findings, Lighthouse accessibility ≥ 90 for UI, error budget for the feature.
+2. **Write `.taa/metrics.md`:** measurable success criteria — e.g. API P95 < 200ms on target hardware, unit test coverage > 80% on Application layer, zero critical static-analysis findings, Lighthouse accessibility ≥ 90 for UI, error budget for the feature. Every metric names its **tool and exact command** (per `templates/taa/metrics.template.md`'s Tool/Command columns) — for latency metrics, copy `templates/taa/loadtest.template.js` to `.taa/tests/loadtest.js` and fill in the real scenario rather than inventing a number.
 3. **Create test skeletons** under `.taa/tests/` mirroring the backlog:
    - Backend: xUnit + FluentAssertions test classes per handler/endpoint, named after backlog IDs (`TAA_012_CreateLicense_Tests.cs`), with `// Arrange/Act/Assert` stubs and `Skip = "pending implementation"` where needed.
    - Frontend: Vitest/Playwright spec stubs per screen/flow.

@@ -11,7 +11,7 @@ Run the TAA pipeline. **Do not write any application code yourself** — you onl
 
 ## 0. Initialize
 1. Create `.taa/` if missing. Copy any templates from `templates/taa/` if they exist in this repo; when TAA runs as an installed plugin, use `${CLAUDE_PLUGIN_ROOT}/templates/taa/` instead.
-2. Create/overwrite `.taa/state.md` from the state template: record the request, timestamp, current git HEAD, and set stage = `BRAIN`. If the user marks the request as trivial/internal ("PM atla"), the PM stage may be skipped with a note in state.md — record who skipped it.
+2. Create/overwrite `.taa/state.md` from the state template: generate a **Run ID** (timestamp-slug + a short feature name, e.g. `2026-07-18-1423-licensing`), record the request, timestamp, current git HEAD, and set stage = `BRAIN`. If the user marks the request as trivial/internal ("PM atla"), the PM stage may be skipped with a note in state.md — record who skipped it. If you detect an existing `.taa/state.md` for a *different* run already in progress in this working tree, stop and tell the user to use a separate git worktree per concurrent run (see docs/PIPELINE.md) rather than overwriting it.
 3. **Stage 0 — BRAIN RECALL:** invoke `taa-brain` (RECALL mode) with the request. Attach its briefing pack (relevant patterns, past ADRs, recurring findings, explicit gaps) to every subsequent subagent invocation. No user gate here — report the briefing inline and continue.
 
 ## 1. Pipeline stages (strict order, one gate per stage)
@@ -47,6 +47,25 @@ For each stage:
    - `düzelt: ...` → re-invoke the same subagent with the user's correction. Repeat the gate.
    - `iptal` → record state and halt.
 5. Never skip a gate, never batch two stages before a gate, never self-approve. The chief's brief NEVER substitutes for the human's answer — even a brief recommending `onayla` still requires the human's explicit approval.
+
+## 1a. Optional: parallel DES + ARCH
+
+After the PO gate (Stage 2) is approved, DES (Stage 3) and ARCH (Stage 4) may
+be **started concurrently** if the user opts in (ask once: "DES ve ARCH
+paralel çalıştırılsın mı?"). This only parallelizes the *work* — gate
+discipline is unchanged:
+- Both stages can be `in-progress` in `.taa/state.md` at the same time (the
+  state template's stage board allows more than one non-terminal status
+  simultaneously).
+- Each still gets its **own separate gate** — approve whichever finishes
+  first, then the other, never a combined "approve both" prompt. Rule 5
+  ("never batch two stages before a gate") still applies to gates, not to
+  when the subagents start working.
+- ARCH should still read whatever DES has produced so far for token/spacing
+  decisions that affect component contracts, but is not blocked waiting for
+  DES's gate to be approved before starting its own independent work (data
+  model, API contract) that doesn't depend on DESIGN.md.
+- Default (no opt-in) remains strictly sequential PO → DES → ARCH.
 
 ## 2. Loop-back rules
 - SEC reports Critical/High findings → return to DEV with the fix list, then SEC re-reviews (no user gate needed for this inner loop, but report each iteration).
