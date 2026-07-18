@@ -11,3 +11,4 @@ __pycache__/
 .taa/inputs/
 .taa/reports/
 **/evals/results-*
+.claude/settings.json
