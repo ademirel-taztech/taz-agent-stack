@@ -10,7 +10,7 @@
 > the combined AGENTS.md chain (default 32 KiB).
 
 This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workflow
-(PO → DES → ARCH → QA → DEV → SEC) for turning requests into production-ready code.
+(PO → DES → ARCH → QA → DEV → OPS → SEC) for turning requests into production-ready code.
 
 ## Hard rules for every session in this repo
 
@@ -53,8 +53,9 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
    pre-commit) — install it and don't skip it with `--no-verify`. If the
    guard blocks you, fix the cause — never rename/bypass the guard.
 
-10. **Constitution of authority:** SEC arbitrates "is it safe", QA arbitrates
-    "is it proven", CHIEF (`taa-chief`) arbitrates "is it worth it" — advisory,
+10. **Constitution of authority:** SEC arbitrates "is it safe", COMPLIANCE
+    (`taa-compliance`) arbitrates "is it lawful", QA arbitrates "is it proven",
+    CHIEF (`taa-chief`) arbitrates "is it worth it" — advisory,
     read-only, no gate authority. Only the human arbitrates "do we proceed".
 
 11. **MCP constitution:** least privilege extends to MCP tools (role-scoped, see

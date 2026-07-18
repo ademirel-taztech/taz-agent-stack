@@ -5,7 +5,7 @@ before first use - the custom-agent TOML schema may evolve."""
 import re, sys, pathlib
 
 SRC = pathlib.Path(".claude/agents"); DST = pathlib.Path("codex/agents"); DST.mkdir(parents=True, exist_ok=True)
-READ_ONLY = {"taa-chief", "taa-security"}  # advisory/audit roles: mark read-only sandbox
+READ_ONLY = {"taa-chief", "taa-security", "taa-compliance"}  # advisory/audit roles: mark read-only sandbox
 
 def esc(s): return s.replace('\\', '\\\\').replace('"""', '\\"\\"\\"')
 

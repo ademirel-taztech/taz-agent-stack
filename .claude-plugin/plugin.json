@@ -12,12 +12,17 @@
     "./.claude/agents/taa-architect.md",
     "./.claude/agents/taa-brain.md",
     "./.claude/agents/taa-chief.md",
+    "./.claude/agents/taa-compliance.md",
+    "./.claude/agents/taa-data.md",
     "./.claude/agents/taa-designer.md",
     "./.claude/agents/taa-dev.md",
+    "./.claude/agents/taa-l10n.md",
+    "./.claude/agents/taa-ops.md",
     "./.claude/agents/taa-pm.md",
     "./.claude/agents/taa-po.md",
     "./.claude/agents/taa-qa.md",
     "./.claude/agents/taa-security.md",
+    "./.claude/agents/taa-support.md",
     "./.claude/agents/taa-writer.md"
   ]
 }

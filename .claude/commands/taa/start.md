@@ -24,11 +24,19 @@ Run the TAA pipeline. **Do not write any application code yourself** — you onl
 | 4 | ARCH  | `taa-architect` | `.taa/architecture.md` |
 | 5 | QA-A  | `taa-qa` (Phase A) | `.taa/metrics.md`, `.taa/tests/*` |
 | 6 | DEV   | `taa-dev` | implementation, updated backlog |
-| 7 | SEC   | `taa-security` | `.taa/review.md`, docs |
-| 8 | QA-B  | `taa-qa` (Phase B) | metric scoreboard |
-| 9 | DREAM | `taa-brain` (DREAM mode) | brain consolidation, `findings/CHECKLIST.md` |
+| 7 | OPS   | `taa-ops` | Dockerfile/CI, config matrix, migration+rollback plan, feature flags, `docs/runbook-*.md` |
+| 8 | SEC   | `taa-security` (+ `taa-compliance` if SPEC has personal data) | `.taa/review.md` (+ `.taa/compliance.md`), docs |
+| 9 | QA-B  | `taa-qa` (Phase B) | metric scoreboard |
+| 10 | DREAM | `taa-brain` (DREAM mode) | brain consolidation, `findings/CHECKLIST.md` |
 
-**Constitution:** SEC arbitrates "is it safe", QA arbitrates "is it proven", CHIEF arbitrates "is it worth it" (advisory), and only the human arbitrates "do we proceed". `taa-chief` runs before every gate as a read-only advisor — it holds no approval authority.
+**Advisory consultants (not separate gated stages):** invoke `taa-data`
+between ARCH and DEV whenever `architecture.md`'s data model includes a
+migration (mandatory reviewer for that backlog item — a Critical/High finding
+blocks DEV the same way a SEC finding would). `taa-l10n` and `taa-support` are
+invocable ad hoc post-DEV/post-SEC (i18n audit, troubleshooting/FAQ docs) —
+not required on every run.
+
+**Constitution:** SEC arbitrates "is it safe", COMPLIANCE arbitrates "is it lawful", QA arbitrates "is it proven", CHIEF arbitrates "is it worth it" (advisory), and only the human arbitrates "do we proceed". `taa-chief` runs before every gate as a read-only advisor — it holds no approval authority.
 
 For each stage:
 1. Invoke the subagent with: the user request, the current stage goal, and pointers to prior `.taa/` artifacts.

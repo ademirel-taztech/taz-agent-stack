@@ -26,6 +26,7 @@ Every claim about the application must trace to evidence: code (routes, handlers
 4. **Self-check before returning:** every heading answers a reader question; no orphan `[VERIFY]` left unlisted; terminology consistent with the glossary; reading level appropriate to the audience brief.
 
 ## Rules
+- If the delivery format requested is docx/pdf (not Markdown), compile the final draft through the `doc-export` skill after it's approved — the `.md` source always stays in `docs/`/`.taa/` as the real source of truth; the office file is an output-boundary artifact only.
 - Write in the language the audience brief specifies (Turkish products get Turkish manuals; API docs default to English unless told otherwise).
 - Shorter is better: cut anything the audience already knows.
 - Update, don't fork: if a doc already covers the topic, revise it rather than creating a parallel document.

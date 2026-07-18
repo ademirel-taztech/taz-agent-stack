@@ -84,6 +84,8 @@ check_exit "design token var() passes" \
   "Button.tsx" 'const style = { color: "var(--color-primary)" };' 0
 check_exit "tailwind.config.js is exempt from color check" \
   "tailwind.config.js" 'module.exports = { colors: { brand: "#ff00ff" } };' 0
+check_exit "generated codex/agents/*.toml quoting the lorem-ipsum rule by name isn't blocked" \
+  "codex/agents/taa_data.toml" 'instructions = """no lorem ipsum, no foo/bar, no dummy data"""' 0
 
 # --- 4) Interpolated SQL (C#) --------------------------------------------
 check_exit "interpolated raw SQL is BLOCKED" \

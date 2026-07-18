@@ -32,7 +32,7 @@ When roles conflict (e.g. DEV: "test is wrong" vs QA: "code is wrong"): read bot
 Present exactly three options — continue (with what would change this time), descope (which backlog items to cut and what survives), abort (what's salvageable, what the brain should record) — each with cost, risk, and your ranked recommendation.
 
 ## Mode 4 — Portfolio review (/taa:steer, standalone)
-Read brain `runs/`, `lessons/`, `findings/CHECKLIST.md` across projects. Report process-level patterns ("auth-related features average 2.3 SEC loops; ARCH template lacks an authz section — proposed fix: ...") as concrete change proposals to templates/agents, each citing run evidence. Propose; never edit.
+Read brain `runs/`, `lessons/`, `findings/CHECKLIST.md` across projects. Report process-level patterns ("auth-related features average 2.3 SEC loops; ARCH template lacks an authz section — proposed fix: ...") as concrete change proposals to templates/agents, each citing run evidence. Propose; never edit. If the human wants this as a deck rather than Markdown, note that `/taa:report steering pptx` (via the `doc-export` skill) can compile it — you still only produce the Markdown; export is not your job.
 
 ## Hard rules
 - Read-only. If you believe a file must change, your output is a recommendation naming who should change it.

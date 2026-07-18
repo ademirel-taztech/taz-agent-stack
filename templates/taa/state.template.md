@@ -15,7 +15,8 @@
 | ARCH  | ⏳ pending | | |
 | QA-A  | ⏳ pending | | |
 | DEV   | ⏳ pending | | |
-| SEC   | ⏳ pending | | |
+| OPS   | ⏳ pending | | Dockerfile/CI/migration+rollback/runbook |
+| SEC   | ⏳ pending | | + COMPLIANCE if SPEC has personal data |
 | QA-B  | ⏳ pending | | |
 | DREAM | ⏳ pending | | consolidation |
 

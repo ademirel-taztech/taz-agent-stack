@@ -11,7 +11,7 @@ Subagent packs on GitHub are stateless: run #100 is exactly as naive as run #1.
 TAA closes the loop:
 
 ```
-recall (Stage 0) ──► pipeline runs ──► dream (Stage 8) ──► brain grows
+recall (Stage 0) ──► pipeline runs ──► dream (Stage 10) ──► brain grows
       ▲                                                        │
       └────────────────── next run starts smarter ◄────────────┘
 ```

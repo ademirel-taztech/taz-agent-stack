@@ -36,17 +36,25 @@ fi
 fail() { echo "TAA-GUARD BLOCK [$1] $FILE: $2" >&2; exit 2; }
 
 # Files that are pure noise — skip every check, including secrets.
+# tests/guard/ fixtures are exempt on purpose: their entire job is to contain
+# strings shaped like the things this guard blocks (fake secrets, lorem
+# ipsum, ...) so the detector's own behavior can be verified. Real code never
+# lives there.
 case "$FILE" in
-  *.lock|*node_modules*|*.min.*) exit 0 ;;
+  *.lock|*node_modules*|*.min.*|*/tests/guard/*|tests/guard/*) exit 0 ;;
 esac
 
-# .md files and the brain directory skip the *content-quality* checks below
-# (lorem-ipsum/color/SQL/TODO don't apply to prose or memory pages), but they
-# do NOT skip secrets or PII — CLAUDE.md rule 7 bans secrets in ".taa
-# artefactları dahil" (which are all .md), and rule 8 bans PII in the brain.
+# .md files, the brain directory, generated Codex agent TOMLs, and the
+# guard's own scripts skip the *content-quality* checks below (lorem-ipsum/
+# color/SQL/TODO don't apply to prose, memory pages, or files that must
+# *document* those rules by name — e.g. an agent .md explaining "no lorem
+# ipsum" would otherwise trip its own generated codex/agents/*.toml, and this
+# very script's comments about rule 2 would trip on itself), but they do NOT
+# skip secrets or PII — CLAUDE.md rule 7 bans secrets in ".taa artefactları
+# dahil" (which are all .md), and rule 8 bans PII in the brain.
 SKIP_CONTENT_CHECKS=0
 case "$FILE" in
-  *.md|*/.taa-brain/*) SKIP_CONTENT_CHECKS=1 ;;
+  *.md|*/.taa-brain/*|*/codex/agents/*.toml|codex/agents/*.toml|*/scripts/taa-guard*.sh|scripts/taa-guard*.sh) SKIP_CONTENT_CHECKS=1 ;;
 esac
 
 # 1) Secrets — hard block everywhere, including .md/.taa artifacts and tests

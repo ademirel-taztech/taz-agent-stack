@@ -9,7 +9,8 @@ flowchart TD
     DES -->|gate| ARCH[taa-architect\narchitecture.md + ADRs]
     ARCH -->|gate| QAA[taa-qa Phase A\nmetrics.md + test skeletons]
     QAA -->|gate| DEV[taa-dev\nimplementation, task by task]
-    DEV --> SEC[taa-security\nreview.md + docs]
+    DEV --> OPS[taa-ops\nDockerfile/CI, migration+rollback, runbook]
+    OPS -->|gate| SEC[taa-security + taa-compliance\nreview.md + compliance.md + docs]
     SEC -->|Critical/High findings| DEV
     SEC -->|gate passed| QAB[taa-qa Phase B\nmetric scoreboard]
     QAB -->|metric fail, max 3 loops| DEV
