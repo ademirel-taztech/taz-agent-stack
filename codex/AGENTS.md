@@ -45,10 +45,13 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 8. **The brain compounds.** Pipelines start with `taa-brain` recall (past patterns,
    ADRs, recurring findings) and end with `/taa:dream` consolidation. SEC treats
    `findings/CHECKLIST.md` as mandatory checks. Never write secrets/PII into the brain.
-9. **Deterministic guards run in hooks** (`scripts/taa-guard.sh` via PostToolUse):
-   secret shapes, lorem-ipsum, hard-coded colors, interpolated SQL, orphan TODOs are
-   blocked by code, not by hoping the model notices. If the guard blocks you, fix the
-   cause — never rename/bypass the guard.
+9. **Deterministic guards run by code, not by hoping the model notices**
+   (`scripts/taa-guard.sh` + `taa-guard-secrets.sh`): secret shapes (everywhere,
+   including `.md`/`.taa` artifacts and the brain), lorem-ipsum, hard-coded
+   colors, interpolated SQL, orphan TODOs. Codex has no PostToolUse hook, so
+   the real enforcement point here is `scripts/install-precommit.sh` (git
+   pre-commit) — install it and don't skip it with `--no-verify`. If the
+   guard blocks you, fix the cause — never rename/bypass the guard.
 
 10. **Constitution of authority:** SEC arbitrates "is it safe", QA arbitrates
     "is it proven", CHIEF (`taa-chief`) arbitrates "is it worth it" — advisory,
@@ -70,3 +73,9 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:research <soru>` — standalone PM market research (cited)
 - `/taa:docs <talep>` — docs track: manuals/guides/release notes with the same gates;
   WRITER's grounding rule: no claim without code/artifact evidence
+- Doc ingest/export (no skill mechanism in Codex — no `/taa:ingest`/`/taa:report`
+  slash commands either): say "Ingest <file> per `.claude/skills/doc-ingest/SKILL.md`"
+  or "Export `.taa/<artifact>.md` to <format> per `.claude/skills/doc-export/SKILL.md`" —
+  the scripts under each skill's `scripts/` folder are plain Python/CLI and run
+  fine under Codex once you point at them explicitly. `/taa:marketing` and the
+  46 bundled marketing skills have no Codex equivalent at all (see codex/README.md).

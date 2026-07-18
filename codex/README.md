@@ -21,5 +21,23 @@ TAA's core is engine-agnostic Markdown (.taa artifacts, brain, templates, gate d
 | Pipeline entry | `/taa:start` slash command | natural-language trigger via AGENTS.md |
 | Write-time guard | PostToolUse hook (blocks instantly) | git pre-commit (blocks at commit) |
 | Plugin packaging | `.claude-plugin/` | not ported |
+| Skills (`.claude/skills/`) | 46 marketing skills + `doc-ingest`/`doc-export`, auto-triggered by description matching | **no skill mechanism in Codex** — `/taa:marketing`, `/taa:ingest`, `/taa:report` as slash commands don't exist here either |
 
 The TOML schema for Codex custom agents evolves — the converter emits a VERIFY note in each file; check field names against developers.openai.com/codex before first run.
+
+### Honest gap: skills, `/taa:marketing`, `/taa:ingest`, `/taa:report`
+
+Codex has no equivalent of Claude Code's skill system, so none of
+`.claude/skills/` ports over automatically — this includes the 46 marketing
+skills **and** the WP-3 `doc-ingest`/`doc-export` skills. Concretely, in
+Codex:
+
+- `/taa:marketing`, `/taa:ingest`, `/taa:report` **do not exist** — there is
+  no slash-command or auto-trigger equivalent.
+- The doc-ingest/doc-export *scripts* under `.claude/skills/doc-ingest/scripts/`
+  and `.claude/skills/doc-export/scripts/` are plain Python/CLI and **do**
+  run fine under Codex — but you have to invoke them yourself (or ask Codex
+  to run them) rather than relying on skill auto-triggering. Point Codex at
+  the relevant `SKILL.md` for the tool-selection logic and honest-degrade
+  messages if you want it to follow the same rules a Claude Code session
+  would.

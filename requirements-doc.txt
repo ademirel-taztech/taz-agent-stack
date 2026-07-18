@@ -1,0 +1,24 @@
+# Optional dependencies for the doc-ingest / doc-export skills (WP-3).
+# Install with: pip install -r requirements-doc.txt
+# (or `./install.sh --with-docs`, which also checks for the non-pip binaries
+# below and prints a one-line install suggestion for whatever's missing.)
+#
+# Nothing in the core TAA pipeline requires this file — the skills degrade
+# honestly (report what they can't do and why) when a package is absent.
+# Versions are pinned to what was verified working during WP-3 development;
+# bump deliberately, not silently.
+
+markitdown==0.0.1a3
+openpyxl==3.1.5
+pdfplumber==0.11.4
+PyMuPDF==1.24.11
+python-docx==1.2.0
+python-pptx==1.0.2
+vsdx==0.6.1
+weasyprint==62.3
+
+# Not on PyPI — install separately, checked by `install.sh --with-docs`:
+#   pandoc   (docx/pdf compiler)            https://pandoc.org/installing.html
+#   soffice  (LibreOffice — legacy formats, https://www.libreoffice.org/download/
+#             and doc-export's render-verification step)
+#   mmdc     (mermaid-cli, diagram render)   npm install -g @mermaid-js/mermaid-cli

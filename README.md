@@ -69,6 +69,25 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | `/taa:research <soru>` | PM: bağımsız pazar/rakip araştırması, atıflı, brain'e yazılabilir |
 | `/taa:docs <talep>` | Doküman hattı: kullanım manueli, özellik rehberi, release notes, API guide — aynı kapı disiplini, kod-kanıtlı yazım |
 | `/taa:marketing <talep>` | Pazarlama hattı: talebi 46 marketing skill'inden doğrusuna yönlendirir (sosyal post, blog, video senaryosu, launch, SEO, pricing…) — `.taa/` artefaktlarına dayalı, uydurma iddia yok, yayınlama daima insanda |
+| `/taa:ingest <dosya\|dizin>...` | xls(x)/doc(x)/pdf/ppt(x)/vsd(x)/csv dosyalarını `.taa/inputs/`'a atıflı Markdown kanıt olarak alır (guard'dan geçer); pipeline dışında da tek başına çalışır |
+| `/taa:report <tür> [format]` | `.taa/` artefaktını (status/steering/review/manual/release-notes) xlsx/docx/pdf/pptx'e derler (`.taa/reports/`); yayınlamak daima insanın işi |
+
+## Doküman I/O: `/taa:ingest` ve `/taa:report`
+
+Pipeline dış dünyadan gelen ofis dosyalarını okuyup **kanıta çevirir**
+(`doc-ingest` skill'i) ve `.taa/` artefaktlarından **profesyonel çıktı üretir**
+(`doc-export` skill'i). Kanonik iç format her zaman Markdown kalır; ofis
+formatları yalnızca giriş/çıkış sınırında yaşar — mekanik iş `markitdown` /
+`openpyxl` / `pdfplumber` / `PyMuPDF` / `python-docx` / `python-pptx` /
+`pandoc` / LibreOffice'e (`soffice`) devredilir, muhakeme LLM'e kalır.
+Visio (`.vsdx`) okunur ve Mermaid flowchart'a çevrilir; **Visio yazımı
+desteklenmez** (draw.io XML alternatifi önerilir — dürüstçe). Bağımlılıklar
+opsiyoneldir: `./install.sh --with-docs` pip paketlerini (`requirements-doc.txt`)
+kurar ve `pandoc`/`soffice`/`mmdc` varlığını kontrol eder; bayrak verilmezse
+skill'ler yine kurulur ama eksik araç için dürüst degrade mesajı verir,
+sessizce sahte bir çıktı üretmez. Ayrıntı:
+[`.claude/skills/doc-ingest/SKILL.md`](.claude/skills/doc-ingest/SKILL.md),
+[`.claude/skills/doc-export/SKILL.md`](.claude/skills/doc-export/SKILL.md).
 
 ## Depo yapısı
 
@@ -81,8 +100,9 @@ CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'len
 
 ```
 .claude/agents/        10 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-security, taa-brain, taa-chief, taa-writer
-.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing
-.claude/skills/        46 marketing skill'i (MIT, Corey Haines) — /taa:marketing bunlara yönlendirir
+.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report
+.claude/skills/        46 marketing skill'i (MIT, Corey Haines) + doc-ingest + doc-export — /taa:marketing ve /taa:ingest·/taa:report bunlara yönlendirir
+requirements-doc.txt    doc-ingest/doc-export'un opsiyonel pip bağımlılıkları (`./install.sh --with-docs`)
 scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookEdit) — deterministik bloklar
 scripts/taa-guard-pretooluse.sh PreToolUse hook — secret şekilleri yazılmadan önce reddedilir
 scripts/taa-guard-bash-scan.sh  PostToolUse/Bash hook — Bash'le yazılan dosyaları `git status` ile yeniden tarar
@@ -114,6 +134,7 @@ claude plugin install taa@taz-marketplace
 git clone https://github.com/ademirel-taztech/taz-agent-stack && cd taz-agent-stack
 ./install.sh /path/to/project   # .claude/ + templates/ + scripts/ hedef projeye kopyalanır
 ./install.sh --global           # agents/commands tüm projeler için ~/.claude'a + ~/.taa/brain
+./install.sh /path/to/project --with-docs   # + doc-ingest/doc-export pip bağımlılıkları, pandoc/soffice/mmdc kontrolü
 ```
 
 Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin (plugin kurulumunda guard otomatik aktiftir). Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
@@ -173,7 +194,7 @@ vs commit'lenmiş `codex/agents/`).
 
 ## English quickstart
 
-TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — eight least-privilege subagents (incl. a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 8, recurring findings auto-promoted to a mandatory security checklist) and deterministic PostToolUse guard hooks (secrets, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`) and a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills) — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
+TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — eight least-privilege subagents (incl. a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 8, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
 
 ```bash
 # recommended — nothing is copied into your project:
