@@ -1,0 +1,30 @@
+{
+  "skill_name": "observability-instrumentation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We just built a new POST /api/orders endpoint. Instrument it for observability.",
+      "expected_output": "Should propose structured logging at request-received, auth-decision, and any external-call boundaries with correlation IDs, propose latency/error-rate/traffic metrics, and name at least one alert-worthy threshold for taa-ops's runbook. Should explicitly say it will not log secrets/PII, and should use the project's existing logging convention rather than introducing a new one (or ask what convention exists if unknown).",
+      "assertions": [
+        "Proposes structured logs with correlation ID at key boundaries",
+        "Proposes latency, error-rate, and traffic metrics",
+        "Names at least one specific alert threshold",
+        "Explicitly excludes secrets/PII from logs",
+        "Checks/asks about existing logging convention rather than assuming a new library"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Someone suggests logging every field of every request payload 'just in case we need it for debugging later,' including the customer's full billing address and card last-4.",
+      "expected_output": "Should push back on logging everything indiscriminately (noise defeats observability), and specifically flag that full billing address and card details are PII/sensitive data that should not be logged in full - propose logging only what's needed for diagnosis (e.g. an order ID, not the full payload) and point to safer alternatives like a redacted/sanitized log or referencing the record by ID.",
+      "assertions": [
+        "Pushes back on logging everything indiscriminately",
+        "Specifically flags card/billing details as sensitive and inappropriate to log in full",
+        "Proposes a safer alternative (ID reference, redaction)",
+        "Does not simply comply with the request as stated"
+      ],
+      "files": []
+    }
+  ]
+}

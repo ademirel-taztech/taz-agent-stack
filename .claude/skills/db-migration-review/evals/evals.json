@@ -1,0 +1,29 @@
+{
+  "skill_name": "db-migration-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this EF Core migration: it adds a NOT NULL column `TenantId` with no default to the `Orders` table, which has about 40 million rows in production.",
+      "expected_output": "Should flag this as a Critical/High finding - adding a NOT NULL column without a default on a large table causes a full table rewrite with a long-held lock. Should propose the safe alternative: add nullable, backfill in batches, then add the NOT NULL constraint (or use a NOT VALID check constraint pattern). Should state the row-count assumption explicitly.",
+      "assertions": [
+        "Flags this as Critical or High severity",
+        "Explains the lock/rewrite mechanism, not just 'this might be slow'",
+        "Proposes a concrete safe alternative (nullable+backfill+constrain, or NOT VALID pattern)",
+        "States the 40 million row assumption explicitly in the output"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review this migration: DROP COLUMN LegacyDiscountCode from the Orders table.",
+      "expected_output": "Should flag this as irreversible (data-loss risk) even though the operation itself is fast. Should ask whether any code still reads this column, and recommend confirming with the human / checking usage before applying rather than approving it outright. Should not simply say 'this is fast, approved'.",
+      "assertions": [
+        "Identifies DROP COLUMN as irreversible / data-loss risk",
+        "Does not conflate 'fast to execute' with 'safe'",
+        "Recommends confirming no code depends on the column before proceeding",
+        "Flags as at least Medium severity given the irreversibility"
+      ],
+      "files": []
+    }
+  ]
+}

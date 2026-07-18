@@ -1,0 +1,31 @@
+{
+  // Lenient on purpose: this repo's Markdown is prose-heavy (agent/skill
+  // instructions, templates with placeholder fill-in blanks) rather than
+  // hand-formatted documentation, so the purely cosmetic default rules
+  // (line length, mandatory blank lines around every heading/list/table,
+  // strict table column alignment) would flag thousands of pre-existing,
+  // harmless lines and drown out anything that actually matters. Disabled
+  // rules below are formatting taste, not correctness; the CI check exists
+  // to catch real markdown mistakes (broken structure, bad links, tabs).
+  "config": {
+    "default": true,
+    "MD013": false, // line-length
+    "MD022": false, // blanks-around-headings
+    "MD024": false, // duplicate-heading (agent files reuse "## Rules"/"## Output" per file, not within one file in a confusing way)
+    "MD025": false, // single H1 (templates use placeholder H1s like "{feature name}")
+    "MD026": false, // no-trailing-punctuation (pre-existing marketing-skill headings use "Category:" style deliberately)
+    "MD029": false, // ol-prefix (CLAUDE.md/AGENTS.md deliberately continue numbering 8,9,10... across sections)
+    "MD031": false, // blanks-around-fences
+    "MD032": false, // blanks-around-lists
+    "MD033": false, // no-inline-html (angle-bracket placeholders like <talep>/<request> aren't real HTML)
+    "MD034": false, // no-bare-urls (reference docs list bare resource URLs/emails deliberately)
+    "MD036": false, // no-emphasis-as-heading (marketing skills use **bold** sub-labels intentionally, not as real headings)
+    "MD040": false, // fenced-code-language (many example blocks are plain text/output, not a real language)
+    "MD041": false, // first-line-heading (every agent/command .md starts with frontmatter + prose, never an H1 — repo-wide convention)
+    "MD056": false, // table-column-count (a couple of pre-existing marketing-skill tables have an intentional wide cell)
+    "MD058": false, // blanks-around-tables
+    "MD060": false // table-column-style (we don't hand-align pipes)
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["**/node_modules/**"]
+}

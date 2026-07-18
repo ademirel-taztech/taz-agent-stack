@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  guard-tests:
+    name: Guard test suite (pure bash, no bats dependency)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests/guard/run_tests.sh
+        run: bash tests/guard/run_tests.sh
+
+  shellcheck:
+    name: Shellcheck all scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          # shellcheck is preinstalled on ubuntu-latest runners.
+          # -P SCRIPTDIR resolves `# shellcheck source=./x.sh` directives
+          # relative to each script's own directory, not the invocation cwd.
+          shopt -s globstar nullglob
+          files=(scripts/*.sh install.sh tests/guard/run_tests.sh)
+          echo "Checking: ${files[*]}"
+          shellcheck -x -P SCRIPTDIR "${files[@]}"
+
+  convert-to-codex-drift:
+    name: convert-to-codex.py drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Regenerate codex/agents/*.toml and diff against committed output
+        run: |
+          python3 scripts/convert-to-codex.py
+          if ! git diff --exit-code -- codex/agents/; then
+            echo "::error::codex/agents/*.toml is out of sync with .claude/agents/*.md — run 'python3 scripts/convert-to-codex.py' and commit the result."
+            exit 1
+          fi
+
+  doc-ingest-smoke:
+    name: doc-ingest/doc-export smoke test (with optional deps installed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install optional doc dependencies
+        run: pip install -r requirements-doc.txt
+      - name: vsdx -> Mermaid (using the vsdx package's own bundled sample file)
+        run: |
+          SAMPLE="$(python3 -c "import vsdx, os; print(os.path.join(os.path.dirname(vsdx.__file__), 'media', 'media.vsdx'))")"
+          python3 .claude/skills/doc-ingest/scripts/vsdx_to_mermaid.py "$SAMPLE" | tee /tmp/vsdx-out.md
+          grep -q "flowchart" /tmp/vsdx-out.md
+      - name: Markdown tables -> xlsx
+        run: |
+          cat > /tmp/sample.md << 'EOF'
+          ## Sheet One
+          | ID | Value |
+          |---|---|
+          | M-1 | 42 |
+          EOF
+          python3 .claude/skills/doc-export/scripts/md_tables_to_xlsx.py /tmp/sample.md /tmp/sample.xlsx
+          test -s /tmp/sample.xlsx
+      - name: Markdown deck -> pptx
+        run: |
+          cat > /tmp/deck.md << 'EOF'
+          ## Slide One
+          - point one
+          - point two
+          note: speaker note
+          EOF
+          python3 .claude/skills/doc-export/scripts/md_deck_to_pptx.py /tmp/deck.md /tmp/deck.pptx
+          test -s /tmp/deck.pptx
+      - name: Guard scan the generated inputs (no secrets leak through the smoke test itself)
+        run: bash scripts/taa-guard.sh --files /tmp/sample.md /tmp/deck.md
+
+  doc-ingest-degrade:
+    name: doc-ingest/doc-export honest-degrade check (no deps installed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Scripts must degrade honestly, never crash uninformatively, when deps are missing
+        run: |
+          set -e
+          out="$(python3 .claude/skills/doc-ingest/scripts/vsdx_to_mermaid.py /tmp/nonexistent.vsdx 2>&1 || true)"
+          echo "$out" | grep -qi "not installed" || { echo "::error::vsdx_to_mermaid.py did not degrade honestly"; exit 1; }
+          out="$(python3 .claude/skills/doc-export/scripts/md_tables_to_xlsx.py /tmp/nonexistent.md /tmp/out.xlsx 2>&1 || true)"
+          echo "$out" | grep -qi "not installed" || { echo "::error::md_tables_to_xlsx.py did not degrade honestly"; exit 1; }
+
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v18
+        with:
+          globs: "**/*.md"

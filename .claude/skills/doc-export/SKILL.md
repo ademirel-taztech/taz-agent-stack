@@ -23,7 +23,7 @@ not yours: **you never hand-author a binary docx/xlsx/pptx byte-for-byte.**
 | docx | `pandoc <in.md> -o <out.docx> --reference-doc=templates/export/reference.docx` | reference.docx carries corporate styles (cover/header/style set) |
 | pdf | `pandoc <in.md> -o <out.pdf> --pdf-engine=weasyprint` | weasyprint avoids a LaTeX install; degrade if missing (see below) |
 | xlsx | `scripts/md_tables_to_xlsx.py <in.md> <out.xlsx>` | one sheet per Markdown table, named after the nearest heading, numeric columns typed |
-| pptx | `scripts/md_deck_to_pptx.py <in.md> <out.pptx> [templates/export/deck-theme.pptx]` | one slide per `## ` heading; bullets from `- `/`* ` lines; `note:` lines → speaker notes |
+| pptx | `scripts/md_deck_to_pptx.py <in.md> <out.pptx> [templates/export/deck-theme.pptx]` | one slide per `##` heading; bullets from `-`/`*` list lines; `note:` lines → speaker notes |
 | diagram (svg/png) | Mermaid stays canonical; `mmdc` (mermaid-cli) renders SVG/PNG if installed | **Visio (.vsdx) authoring is NOT supported** — see below |
 
 Run `python3 scripts/ensure_templates.py templates/export .taa/DESIGN.md`

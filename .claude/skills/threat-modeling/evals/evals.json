@@ -1,0 +1,30 @@
+{
+  "skill_name": "threat-modeling",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We're adding a public API endpoint that lets a tenant admin invite new users by email. Threat-model this before we build it.",
+      "expected_output": "Should name concrete assets (tenant user list, invitation tokens, email addresses). Should identify the public API edge and the auth boundary (tenant-admin-only) as trust boundaries. Should walk STRIDE per boundary and produce at least 5 concrete threats with specific countermeasures (e.g. invitation token expiry/single-use, rate limiting invite sends, verifying the inviter is actually a tenant admin server-side not from a client claim). Should not produce vague 'validate input' style countermeasures.",
+      "assertions": [
+        "Names concrete assets, not vague ones",
+        "Identifies at least 2 trust boundaries",
+        "Produces at least 5 threats across STRIDE categories",
+        "Each threat has a specific, mechanism-level countermeasure",
+        "Does not invent unrelated threats with no connection to the feature"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Fill in the Threat Model section for a feature that only touches internal batch-processing code with no external API and no user-facing surface.",
+      "expected_output": "Should still produce a threat model but scope it honestly to what's real: internal actors, queue/job boundaries, data-at-rest tampering by another internal service. Should not force public-API-style threats (spoofing external users) that don't apply, and should say so explicitly rather than padding the count.",
+      "assertions": [
+        "Does not invent external-user threats for an internal-only system",
+        "Explicitly states which STRIDE categories don't apply and why",
+        "Still finds real internal trust boundaries (e.g. queue consumer, other internal services)",
+        "Doesn't pad the threat count with weak/generic entries just to hit 5"
+      ],
+      "files": []
+    }
+  ]
+}

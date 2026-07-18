@@ -1,0 +1,29 @@
+{
+  "skill_name": "api-design-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this change to an existing, already-shipped endpoint: GET /api/orders currently returns `{ status: string }` for order status, and we want to change it to `{ status: number }` (an enum code) to save bandwidth.",
+      "expected_output": "Should flag this as a breaking change (field type change from string to number) that would break any existing client parsing the field as a string. Should recommend either a new API version, an additive new field (e.g. add `statusCode` alongside keeping `status` as string), or explicit client coordination - not approve the type change in place silently.",
+      "assertions": [
+        "Identifies this as a breaking change",
+        "Explains specifically why (type change breaks existing client parsing)",
+        "Recommends versioning or an additive approach rather than in-place replacement",
+        "Does not approve the change without flagging the compatibility issue"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Our existing API uses `/v1/customer` (singular) for all resources and a `{ error: { code, message } }` error shape everywhere. Review this new endpoint proposal: `POST /createCustomerOrder` returning errors as `{ success: false, errorMessage: '...' }`.",
+      "expected_output": "Should flag both the naming convention mismatch (verb-in-path instead of resource+HTTP-method, and inconsistent with existing singular-noun convention - should point out the endpoint should look more like the existing pattern, e.g. POST /customer/{id}/order) and the error shape inconsistency (different shape than the rest of the API), citing brownfield consistency as the reason rather than abstract REST best practice alone.",
+      "assertions": [
+        "Flags the verb-based endpoint naming as inconsistent with existing conventions",
+        "Flags the error response shape as inconsistent with the existing error format",
+        "Justifies findings via existing codebase convention (brownfield), not just generic REST theory",
+        "Proposes a concrete corrected form consistent with existing patterns"
+      ],
+      "files": []
+    }
+  ]
+}
