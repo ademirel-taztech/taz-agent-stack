@@ -80,6 +80,7 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | `/taa:refactor <hedef>` | Davranış-koruyan refactor: karakterizasyon testleri → refactor → SEC diff denetimi; SPEC yerine `.taa/invariants.md` |
 | `/taa:upgrade <paket\|framework>` | ARCH liderliğinde sürüm geçişi: breaking-change araştırması, aşamalı plan ve uygulama |
 | `/taa:onboard [odak]` | Brain + `.taa/` + architecture.md'den atıflı yeni geliştirici oryantasyon dokümanı |
+| `/taa:explain <hedef>` | Kod anlama hattı: tek bir çalışma yolunu uçtan uca izler (endpoint/entrypoint → application → domain → infrastructure), her sıçramada `file:line` atfı, Mermaid sequence diyagramı; DI/mediator/queue gibi dinamik dikişleri kaydından çözer, çözemediğini "Açık sorular"a yazar. `map:` alt sistem haritası, `impact:` değişiklik yarıçapı. Salt-okunur, kapısız, **asla düzeltmez** — bulgular `/taa:review`·`/taa:fix`·`/taa:refactor`'a yönlendirilir |
 
 ## Doküman I/O: `/taa:ingest` ve `/taa:report`
 
@@ -108,8 +109,8 @@ CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'len
 `codex/agents/` arasında drift olursa build'i kırar.
 
 ```
-.claude/agents/        15 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer
-.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard
+.claude/agents/        16 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer, taa-explainer
+.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard, explain
 .claude/skills/        46 marketing skill'i (MIT, Corey Haines) + doc-ingest + doc-export — /taa:marketing ve /taa:ingest·/taa:report bunlara yönlendirir
 requirements-doc.txt    doc-ingest/doc-export'un opsiyonel pip bağımlılıkları (`./install.sh --with-docs`)
 scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookEdit) — deterministik bloklar
@@ -164,7 +165,7 @@ Varsayılan set `.mcp.json.example` içinde: **GitHub** (backlog⇄issue senkron
 
 ## OpenAI Codex desteği
 
-`codex/` adaptörü: `AGENTS.md` (Codex talimat zinciri), `codex/agents/*.toml` (15 rolün otomatik dönüşümü — `scripts/convert-to-codex.py`), TAA Guard git pre-commit olarak (`scripts/install-precommit.sh`). Pipeline'a giriş: *"Run the TAA pipeline for: <talep>"*. Fark tablosu: [codex/README.md](codex/README.md)
+`codex/` adaptörü: `AGENTS.md` (Codex talimat zinciri), `codex/agents/*.toml` (16 rolün otomatik dönüşümü — `scripts/convert-to-codex.py`), TAA Guard git pre-commit olarak (`scripts/install-precommit.sh`). Pipeline'a giriş: *"Run the TAA pipeline for: <talep>"*. Fark tablosu: [codex/README.md](codex/README.md)
 
 ## Doküman hattı: `/taa:docs`
 
@@ -200,14 +201,14 @@ ile otomatik state yedekleme, CI drift kontrolü (`convert-to-codex.py` çıktı
 vs commit'lenmiş `codex/agents/`). Değerlendirilip **şimdilik implemente
 edilmeyen** roller (bir dış denetimin notu): UX-researcher, FinOps (CHIEF'in
 "budget" kavramına gerçek maliyet — token + bulut — ölçümü), bağımsız
-accessibility-auditor — gelecekte istenirse mevcut 15 rolün kalıbını taklit
+accessibility-auditor — gelecekte istenirse mevcut 16 rolün kalıbını taklit
 ederek eklenebilirler.
 
 ---
 
 ## English quickstart
 
-TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 15 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
+TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 16 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, a read-only code Explainer that traces an execution path across layers with a `file:line` citation per hop, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
 
 ```bash
 # recommended — nothing is copied into your project:
