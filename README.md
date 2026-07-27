@@ -146,7 +146,74 @@ git clone https://github.com/ademirel-taztech/taz-agent-stack && cd taz-agent-st
 ./install.sh /path/to/project --with-docs   # + doc-ingest/doc-export pip bağımlılıkları, pandoc/soffice/mmdc kontrolü
 ```
 
+Bu yol ayrıca `taa` CLI'sini de kurar. Proje kurulumu `bin/taa`, `bin/taa.ps1` ve `bin/taa.cmd` üretir. Global kurulumda platforma göre şunlar hedeflenir:
+
+- macOS / Linux: betik `/usr/local/bin/taa` konumuna yazılır ve gerekirse `sudo chmod +x /usr/local/bin/taa` ile çalıştırılabilir hale getirilir.
+- Windows: `C:\tools\taa` klasörü oluşturulur, içine `taa.ps1` ve `taa.cmd` yazılır; mümkünse kullanıcı `PATH`'ine otomatik eklenir, eklenemezse installer talimat verir.
+
 Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin (plugin kurulumunda guard otomatik aktiftir). Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
+
+## `taa` CLI
+
+`taa`, farklı sağlayıcılardaki modelleri tek bir config üstünden yönetip **Codex** veya **Claude Code** çalıştırmak için hafif bir başlatıcıdır. Claude tarafında arkada **LiteLLM proxy** açar; böylece yerel modeller veya OpenAI-uyumlu başka uç noktalar Claude Code'a tek biçimde sunulur.
+
+### Komut Sözdizimi ve Kullanım Örnekleri
+
+#### 1. Yeni Sağlayıcı Ekleme (`add`)
+
+```bash
+# Yerel C# Servisi veya Llama.cpp (API Key gerektirmez)
+taa config add --supplier local-engine --api http://localhost:5000/v1
+
+# NVIDIA API Endpoint (API Key ile)
+taa config add --supplier nvidia --api https://integrate.api.nvidia.com/v1 --apikey nvapi-xxxxxx
+
+# OpenRouter
+taa config add --supplier openrouter --api https://openrouter.ai/api/v1 --apikey sk-or-xxxxxx
+```
+
+#### 2. Tanımlı Sağlayıcıları Listeleme (`list`)
+
+```bash
+taa list
+```
+
+Çıktı:
+
+```text
+📋 Kayıtlı Sağlayıcılar (Config: /Users/username/.taa/config.json):
+------------------------------------------------------------
+• local-engine
+  API:    http://localhost:5000/v1
+  KEY:    (Yok/Local)
+
+• nvidia
+  API:    https://integrate.api.nvidia.com/v1
+  KEY:    *****xxxx
+```
+
+#### 3. Güncelleme (`update`)
+
+```bash
+# Sadece API adresini değiştirme
+taa config update --supplier local-engine --api http://localhost:8080/v1
+
+# Sadece API Key güncelleme
+taa config update --supplier nvidia --apikey nvapi-NEWKEY123
+```
+
+#### 4. Silme (`delete`)
+
+```bash
+taa config delete --supplier openrouter
+```
+
+#### 5. Ajan Çalıştırma (`launch`)
+
+```bash
+taa launch claude --supplier nvidia --model z-ai/glm-5.2
+taa launch codex --supplier local-engine --model qwen2.5-coder
+```
 
 **Önerilen ikinci savunma hattı:** `scripts/install-precommit.sh <repo>` — TAA Guard'ı git `pre-commit` hook'u olarak da kurar. Hook'lar (PreToolUse/PostToolUse) her zaman devrede olsa da, bu ikinci hat hem Codex tarafında (Codex'in native hook mekanizması yok) hem de Claude Code'da hook'ların hiç çalışmadığı senaryolarda (elle `git commit`, harici düzenleyici) son bir güvenlik ağıdır — opsiyonel değil, **önerilir**.
 
