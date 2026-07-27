@@ -82,6 +82,7 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:refactor <target>` — behavior-preserving refactor: characterization tests, then the refactor, then a SEC diff audit; uses `.taa/invariants.md` instead of SPEC.md
 - `/taa:upgrade <package|framework>` — ARCH-led version migration: breaking-change research, staged plan, staged implementation
 - `/taa:onboard [focus]` — synthesizes a cited onboarding doc from the brain + `.taa/` + architecture.md
+- `/taa:explain <target>` — code comprehension: spawn `taa_explainer` to trace one execution path end to end (entrypoint → application → domain → infrastructure), `file:line` at every hop; `map:`/`impact:` variants. Read-only on source, no gate, never fixes
 - Doc ingest/export (no skill mechanism in Codex — no `/taa:ingest`/`/taa:report`
   slash commands either): say "Ingest <file> per `.claude/skills/doc-ingest/SKILL.md`"
   or "Export `.taa/<artifact>.md` to <format> per `.claude/skills/doc-export/SKILL.md`" —

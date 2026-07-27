@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+**Code comprehension track:**
+- `taa-explainer` agent (16th role) — explains how existing code works: traces one
+  execution path end to end across layers (entrypoint → application → domain →
+  infrastructure → external boundary) with a `file:line` citation at every hop,
+  resolves the dynamic seams a grep stops at (DI registrations, mediator handlers +
+  pipeline behavior order, middleware/decorators, queue hand-offs, config-driven
+  dispatch), and closes with a mandatory honesty ledger of what could not be
+  established from code. Read-only on source; its only write is its own report.
+- `/taa:explain <target>` — the command. Modes: `trace` (default), `map:` (subsystem
+  components + dependency direction), `impact:` (blast radius of a change). No gate,
+  no state consumption; findings route to `/taa:review`, `/taa:fix` or `/taa:refactor`
+  instead of being fixed in place. Reports land in `.taa/explain/<slug>.md`.
+- Codex parity: `codex/agents/taa_explainer.toml` (regenerated via
+  `scripts/convert-to-codex.py`), plus the command entry in `codex/AGENTS.md`.
+
 ## [2.1.0] — 2026-07-18
 
 Findings from an external audit (`TAA-IYILESTIRME-GOREVI.md`), all 8 work

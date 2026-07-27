@@ -16,6 +16,7 @@
     "./.claude/agents/taa-data.md",
     "./.claude/agents/taa-designer.md",
     "./.claude/agents/taa-dev.md",
+    "./.claude/agents/taa-explainer.md",
     "./.claude/agents/taa-l10n.md",
     "./.claude/agents/taa-ops.md",
     "./.claude/agents/taa-pm.md",

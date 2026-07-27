@@ -61,6 +61,10 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:brain <query>` — ask institutional memory (cited synthesis)
 - `/taa:dream` — consolidate a finished run into the brain
 - `/taa:steer [portfolio|dispute]` — Chief-of-Staff advisory analysis
+- `/taa:explain <target>` — code comprehension track: traces one execution path end to
+  end (entrypoint → application → domain → infrastructure) with a `file:line` citation at
+  every hop; `map:` for a subsystem, `impact:` for blast radius. Read-only, no gate,
+  never fixes — findings route to `/taa:review`, `/taa:fix` or `/taa:refactor`
 - `/taa:research <soru>` — standalone PM market research (cited)
 - `/taa:docs <talep>` — docs track: manuals/guides/release notes with the same gates;
   WRITER's grounding rule: no claim without code/artifact evidence
