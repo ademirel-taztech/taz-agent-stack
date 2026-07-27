@@ -83,13 +83,16 @@ case "$COMMAND" in
                 # NVIDIA NIM için LiteLLM'in yerel provider prefix'i kullanılır
                 LITELLM_MODEL="nvidia_nim/$MODEL"
                 CLEAN_API_BASE="https://integrate.api.nvidia.com/v1"
+            elif [[ "$CLEAN_API_BASE" == *"deepseek.com"* ]] || [ "$SUPPLIER" == "deepseek" ]; then
+                # DeepSeek /v1 takısı kullanmaz
+                LITELLM_MODEL="deepseek/$MODEL"
+                CLEAN_API_BASE="https://api.deepseek.com"
             else
                 LITELLM_MODEL="openai/$MODEL"
                 if [[ "$CLEAN_API_BASE" != *"/v1"* ]]; then
                     CLEAN_API_BASE="${CLEAN_API_BASE}/v1"
                 fi
             fi
-
             # Dynamic LiteLLM YAML Config
             # Hem $MODEL hem de $LITELLM_MODEL alias olarak eklenir.
             TMP_YAML="/tmp/litellm_runtime_config.yaml"
