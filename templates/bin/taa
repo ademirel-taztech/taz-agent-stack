@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+
+CONFIG_DIR="$HOME/.taa"
+CONFIG_FILE="$CONFIG_DIR/config.json"
+PROXY_PORT=4000
+
+# Bağımlılık Kontrolleri
+if ! command -v jq &> /dev/null; then
+    echo "❌ Hata: 'jq' kütüphanesi bulunamadı. (brew install jq)"
+    exit 1
+fi
+
+if ! command -v litellm &> /dev/null; then
+    echo "❌ Hata: 'litellm' komutu bulunamadı. (pip install 'litellm[proxy]')"
+    exit 1
+fi
+
+init_config() {
+    if [ ! -d "$CONFIG_DIR" ]; then mkdir -p "$CONFIG_DIR"; fi
+    if [ ! -f "$CONFIG_FILE" ]; then echo '{"suppliers":{}}' > "$CONFIG_FILE"; fi
+}
+init_config
+
+usage() {
+    echo "Taz Architectural Agent (taa)"
+    echo ""
+    echo "Kullanım:"
+    echo "  taa launch <claude|codex> --supplier <isim> --model <model_adı>"
+    echo "  taa list"
+    echo "  taa config add --supplier <isim> --api <url> [--apikey <key>]"
+    echo "  taa config update --supplier <isim> [--api <url>] [--apikey <key>]"
+    echo "  taa config delete --supplier <isim>"
+    exit 1
+}
+
+COMMAND="$1"
+
+case "$COMMAND" in
+    launch)
+        AGENT_TYPE="$2"
+        shift 2
+        SUPPLIER=""
+        MODEL=""
+
+        while [[ $# -gt 0 ]]; do
+          case $1 in
+            --supplier) SUPPLIER="$2"; shift 2 ;;
+            --model) MODEL="$2"; shift 2 ;;
+            *) shift ;;
+          esac
+        done
+
+        if [ -z "$AGENT_TYPE" ] || [ -z "$SUPPLIER" ] || [ -z "$MODEL" ]; then usage; fi
+
+        API_BASE=$(jq -r ".suppliers[\"$SUPPLIER\"].api_base // empty" "$CONFIG_FILE")
+        API_KEY=$(jq -r ".suppliers[\"$SUPPLIER\"].api_key // empty" "$CONFIG_FILE")
+
+        if [ -z "$API_BASE" ]; then
+            echo "❌ Hata: '$SUPPLIER' adında bir sağlayıcı config'de tanımlı değil!"
+            exit 1
+        fi
+
+        [ -z "$API_KEY" ] && API_KEY="dummy-key"
+
+        # Endpoint temizleme
+        CLEAN_API_BASE=$(echo "$API_BASE" | sed -E 's|\/chat\/completions\/*||' | sed -E 's|\/*$||')
+
+        echo "🚀 [$SUPPLIER] sağlayıcısına bağlanılıyor..."
+        echo "📍 Endpoint: $CLEAN_API_BASE"
+        echo "🧠 Model: $MODEL"
+
+        if [ "$AGENT_TYPE" == "claude" ]; then
+            echo "🔄 LiteLLM Proxy hazırlanıyor (Port: $PROXY_PORT)..."
+
+            # Provider Tespiti
+            LITELLM_MODEL="$MODEL"
+            if [[ "$CLEAN_API_BASE" == *"openrouter.ai"* ]]; then
+                LITELLM_MODEL="openrouter/$MODEL"
+            elif [[ "$CLEAN_API_BASE" == *"11434"* ]] || [ "$SUPPLIER" == "ollama" ]; then
+                LITELLM_MODEL="ollama_chat/$MODEL"
+                CLEAN_API_BASE=$(echo "$CLEAN_API_BASE" | sed -E 's|\/v1\/*$||')
+            elif [[ "$CLEAN_API_BASE" == *"nvidia.com"* ]] || [ "$SUPPLIER" == "nvidia" ]; then
+                # NVIDIA NIM için LiteLLM'in yerel provider prefix'i kullanılır
+                LITELLM_MODEL="nvidia_nim/$MODEL"
+                CLEAN_API_BASE="https://integrate.api.nvidia.com/v1"
+            else
+                LITELLM_MODEL="openai/$MODEL"
+                if [[ "$CLEAN_API_BASE" != *"/v1"* ]]; then
+                    CLEAN_API_BASE="${CLEAN_API_BASE}/v1"
+                fi
+            fi
+
+            # Dynamic LiteLLM YAML Config
+            # Hem $MODEL hem de $LITELLM_MODEL alias olarak eklenir.
+            TMP_YAML="/tmp/litellm_runtime_config.yaml"
+            cat <<EOF > "$TMP_YAML"
+model_list:
+  - model_name: "$MODEL"
+    litellm_params:
+      model: "$LITELLM_MODEL"
+      api_base: "$CLEAN_API_BASE"
+      api_key: "$API_KEY"
+      drop_params: true
+    model_info:
+      id: "$MODEL"
+      mode: "chat"
+  - model_name: "openai/$MODEL"
+    litellm_params:
+      model: "$LITELLM_MODEL"
+      api_base: "$CLEAN_API_BASE"
+      api_key: "$API_KEY"
+      drop_params: true
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+EOF
+
+            # Eski süreci temizle
+            lsof -ti:$PROXY_PORT | xargs kill -9 > /dev/null 2>&1
+
+            # Proxy'yi çalıştır
+            litellm --config "$TMP_YAML" --port $PROXY_PORT > /tmp/litellm.log 2>&1 &
+            
+            PROXY_PID=$!
+            cleanup() { if [ -n "$PROXY_PID" ]; then kill $PROXY_PID > /dev/null 2>&1; fi; }
+            trap cleanup EXIT INT TERM
+
+            # Port Dinleme Kontrolü
+            READY=0
+            for i in {1..12}; do
+                if ! kill -0 $PROXY_PID 2>/dev/null; then break; fi
+                if lsof -i:$PROXY_PORT >/dev/null 2>&1 || curl -s "http://127.0.0.1:$PROXY_PORT/health" >/dev/null 2>&1; then
+                    READY=1
+                    break
+                fi
+                sleep 1
+            done
+
+            if [ $READY -eq 0 ]; then
+                echo "❌ Hata: LiteLLM Proxy başlatılamadı!"
+                echo "📄 Hata Logu (/tmp/litellm.log):"
+                echo "----------------------------------------"
+                cat /tmp/litellm.log | tail -n 15
+                echo "----------------------------------------"
+                exit 1
+            fi
+
+            echo "⚡ Claude Code başlatılıyor..."
+            
+            # Claude Code'a model ismini alias üzerinden de tanıtabilmek için ANTHROPIC_MODEL atanır
+            ANTHROPIC_BASE_URL="http://127.0.0.1:$PROXY_PORT" \
+            ANTHROPIC_API_KEY="sk-dummy" \
+            ANTHROPIC_MODEL="$MODEL" \
+            CLAUDE_AUTO_TRIM_CONTEXT="true" \
+            MAX_CONTEXT_TOKENS="131072" \
+            claude
+
+        elif [ "$AGENT_TYPE" == "codex" ]; then
+            echo "⚡ Codex başlatılıyor..."
+            OPENAI_API_BASE="$CLEAN_API_BASE" \
+            OPENAI_API_KEY="$API_KEY" \
+            OPENAI_MODEL_NAME="$MODEL" \
+            codex
+        fi
+        ;;
+
+    list)
+        echo "📋 Kayıtlı Sağlayıcılar (Config: $CONFIG_FILE):"
+        echo "------------------------------------------------------------"
+        jq -r '.suppliers | to_entries[] | "• \(.key)\n  API:    \(.value.api_base)\n  KEY:    \(if .value.api_key != "" then "*****" + (.value.api_key[-4:] // "") else "(Yok/Local)" end)\n"' "$CONFIG_FILE"
+        ;;
+
+    config)
+        ACTION="$2"; shift 2
+        SUPPLIER=""; API_URL=""; API_KEY=""
+        while [[ $# -gt 0 ]]; do
+          case $1 in
+            --supplier) SUPPLIER="$2"; shift 2 ;;
+            --api) API_URL="$2"; shift 2 ;;
+            --apikey) API_KEY="$2"; shift 2 ;;
+            *) shift ;;
+          esac
+        done
+
+        if [ -z "$SUPPLIER" ]; then echo "❌ Hata: --supplier zorunludur."; usage; fi
+
+        case "$ACTION" in
+            add)
+                [ -z "$API_URL" ] && { echo "❌ Hata: --api URL zorunludur."; exit 1; }
+                TMP_FILE=$(mktemp)
+                jq --arg sup "$SUPPLIER" --arg api "$API_URL" --arg key "$API_KEY" \
+                   '.suppliers[$sup] = {"api_base": $api, "api_key": $key}' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
+                echo "✅ '$SUPPLIER' başarıyla eklendi."
+                ;;
+            update)
+                TMP_FILE=$(mktemp)
+                if [ -n "$API_URL" ] && [ -n "$API_KEY" ]; then
+                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" --arg key "$API_KEY" '.suppliers[$sup].api_base = $api | .suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
+                elif [ -n "$API_URL" ]; then
+                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" '.suppliers[$sup].api_base = $api' "$CONFIG_FILE" > "$TMP_FILE"
+                elif [ -n "$API_KEY" ]; then
+                    jq --arg sup "$SUPPLIER" --arg key "$API_KEY" '.suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
+                fi
+                mv "$TMP_FILE" "$CONFIG_FILE"
+                echo "✅ '$SUPPLIER' güncellendi."
+                ;;
+            delete)
+                TMP_FILE=$(mktemp)
+                jq --arg sup "$SUPPLIER" 'del(.suppliers[$sup])' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
+                echo "🗑️  '$SUPPLIER' silindi."
+                ;;
+            *) usage ;;
+        esac
+        ;;
+    *) usage ;;
+esac

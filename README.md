@@ -158,6 +158,24 @@ Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini pro
 
 `taa`, farklı sağlayıcılardaki modelleri tek bir config üstünden yönetip **Codex** veya **Claude Code** çalıştırmak için hafif bir başlatıcıdır. Claude tarafında arkada **LiteLLM proxy** açar; böylece yerel modeller veya OpenAI-uyumlu başka uç noktalar Claude Code'a tek biçimde sunulur.
 
+### Önşartlar
+
+`taa launch claude` akışı LiteLLM proxy kullandığı için `litellm[proxy]` kurulmuş olmalıdır.
+
+```bash
+pip install "litellm[proxy]"
+```
+
+macOS için önerilen kurulum:
+
+```bash
+# Sistem bağımlılıkları (macOS için Homebrew ile)
+brew install jq
+
+# LiteLLM Proxy bağımlılığı (proxy opsiyonu şarttır)
+pip install "litellm[proxy]"
+```
+
 ### Komut Sözdizimi ve Kullanım Örnekleri
 
 #### 1. Yeni Sağlayıcı Ekleme (`add`)
