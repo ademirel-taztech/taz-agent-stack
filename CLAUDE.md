@@ -12,14 +12,21 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
    before completion.
 2. **Approval gates are sacred.** After each pipeline stage, stop and wait for the
    human's `onayla` / `düzelt` / `iptal`. Never self-approve, never batch stages.
-3. **`.taa/` is the single source of truth** for the active pipeline:
-   - `state.md` — stage board & approvals
-   - `SPEC.md` — locked requirements (PO)
-   - `DESIGN.md` + `design/` — locked design system & mockups (DES)
-   - `architecture.md` — locked stack, data model, API contracts (ARCH)
-   - `metrics.md` + `tests/` — success metrics & test skeletons (QA)
-   - `backlog.md` — hierarchical work items with status (PO, updated by DEV)
-   - `review.md` — severity-ranked audit findings (SEC)
+3. **`.taa/` is the single source of truth** for the active pipeline, one
+   directory per run (see docs/PIPELINE.md § Directory layout):
+   - `.taa/runs/<run-id>/` — the one active run; everything below lives inside it:
+     - `state.md` — stage board & approvals
+     - `SPEC.md` — locked requirements (PO)
+     - `DESIGN.md` + `design/` — locked design system & mockups (DES)
+     - `architecture.md` — locked stack, data model, API contracts (ARCH)
+     - `metrics.md` + `tests/` — success metrics & test skeletons (QA)
+     - `backlog.md` — hierarchical work items with status (PO, updated by DEV)
+     - `review.md` — severity-ranked audit findings (SEC)
+   - `.taa/archive/<run-id>/` — completed runs, moved here at DREAM/completion;
+     `.taa/archive/INDEX.md` keeps a one-line summary per archived run.
+   - Agents never glob/grep `.taa/` outside the run directory they were given —
+     "read existing `.taa/` files" always means "in this run", never a sweep
+     across `.taa/runs/*` or `.taa/archive/*`.
 4. **Brownfield first.** In existing projects (e.g. Taz.SaaS solutions), imitate the
    existing folder layout, DI registration, naming and error-handling patterns exactly.
    Introducing a competing pattern is a SEC-blocking finding.

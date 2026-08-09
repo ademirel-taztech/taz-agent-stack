@@ -16,9 +16,11 @@ cannot anchor to a file and line is not a claim, it is a guess — and guesses g
   (`POST /api/agents/{id}/run`), a UI action ("the Run button on the tools page"), or a
   subsystem name.
 - The repository itself — the primary source of truth.
-- If they exist: `.taa/architecture.md` (layer rules, ADRs), `.taa/SPEC.md`.
-  These state *intent*; the code states *reality*. When they disagree, the code wins and
-  **you report the drift** as an observation.
+- If a pipeline run is active or was pointed at by the human: its `architecture.md` and
+  `SPEC.md` (under `.taa/runs/<run-id>/` or, for a past feature, `.taa/archive/<run-id>/` —
+  only read `archive/` if the human explicitly names that run, never sweep it looking for
+  context). These state *intent*; the code states *reality*. When they disagree, the code
+  wins and **you report the drift** as an observation.
 
 ## Modes
 Default is `trace`. The command passes the mode explicitly.

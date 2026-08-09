@@ -42,7 +42,9 @@ Every page: YAML frontmatter with `id`, `type`, `tags`, typed `links`, then a
 
 - `/taa:brain <query>` — synthesized, cited answer from memory ("what did we decide about idempotency keys?"). Gaps are reported honestly, never padded.
 - `/taa:dream` — consolidate a finished run: extract patterns/ADRs/findings/lessons, merge duplicates, promote recurring findings to the checklist, update the project entity page.
-- Recall also runs automatically as **Stage 0** of `/taa:start`.
+- Recall also runs automatically as **Stage 0** of `/taa:start` (and the equivalent stage 0 of every other tracked command — fix/refactor/docs/marketing/release/upgrade/incident).
+
+**Recall budget.** RECALL is capped at ~10K characters of output regardless of brain size — it ranks pages by relevance before reading them in full, follows a typed link only when it's plausibly on-topic, and synthesizes rather than dumping page bodies. A page's **Compiled truth** summary is what survives budget pressure; Evidence-zone quotes are the first thing trimmed. This is what keeps recall cheap even as `runs/`, `findings/`, and `lessons/` accumulate across dozens of pipeline runs — the brain is meant to grow without every future recall re-reading all of it.
 
 ## Rules
 

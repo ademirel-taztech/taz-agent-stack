@@ -29,13 +29,15 @@ Every brain page is Markdown with YAML frontmatter (`id`, `type`, `tags`, `links
 Never edit the evidence zone except to append. When compiled truth changes, it must cite the evidence lines that justify it. A fact without a citation is a bug.
 
 ## Mode A — RECALL (pipeline start, or /taa:brain query)
-1. Given the request/query, search the brain (`Grep` over frontmatter tags + content; follow typed links one hop).
-2. Return a **synthesized answer, not chunks**: relevant patterns, applicable past ADRs, recurring SEC findings that apply to this domain, lessons learned — each with its page id cited.
-3. Explicitly state gaps: "brain has nothing on X" is a valid, useful answer (gap analysis). Never pad with weakly related pages.
-4. Output a short **stage briefing pack**: 3 bullets for ARCH, 3 for QA, 3 for SEC ("watch for…"), only where the brain genuinely has signal.
+1. Given the request/query, search the brain (`Grep` over frontmatter tags + content) for the pages most likely relevant. **Rank before reading in full** — grep matches on tags/titles first, only then open full page bodies for the top candidates.
+2. Follow a typed link **one hop, and only when the linked page's title/id makes it plausibly relevant** to the request — never follow every link on a hot page reflexively.
+3. **Hard budget: ~10,000 characters total for the RECALL output** (briefing pack + citations), regardless of how much the brain contains. This is a synthesis budget, not a page-count limit — cite as many page ids as are relevant, but never quote a page's full Evidence zone; pull only the Compiled truth summary line(s) that answer this request. If the relevant material would exceed the budget, prioritize: (a) SEC/security-class findings, (b) directly-matching patterns/decisions, (c) lessons, and say explicitly what you left out and why ("N more tangentially related pages exist, omitted for budget — ask `/taa:brain` directly if needed").
+4. Return a **synthesized answer, not chunks**: relevant patterns, applicable past ADRs, recurring SEC findings that apply to this domain, lessons learned — each with its page id cited. A page's Compiled truth summary must survive into your answer even under budget pressure; it's the Evidence-zone quotes you trim first, never the summary itself.
+5. Explicitly state gaps: "brain has nothing on X" is a valid, useful answer (gap analysis). Never pad with weakly related pages.
+6. Output a short **stage briefing pack**: 3 bullets for ARCH, 3 for QA, 3 for SEC ("watch for…"), only where the brain genuinely has signal — this counts against the same 10K budget.
 
 ## Mode B — DREAM (consolidation after a run, /taa:dream)
-Read the finished `.taa/` artifacts (state, architecture ADRs, review findings, metrics scoreboard, backlog notes) and consolidate:
+Read the finished run's artifacts (state, architecture ADRs, review findings, metrics scoreboard, backlog notes) from the run directory the orchestrator gives you — normally still `.taa/runs/<run-id>/` at this point (the orchestrator archives it to `.taa/archive/<run-id>/` *after* DREAM finishes, so you don't need to look in `archive/`) — and consolidate:
 1. **Extract:** new/updated patterns (reusable design or code approaches), each ADR worth generalizing, every SEC finding (as a `findings/` page keyed by vulnerability class, appending this occurrence as evidence), lessons (what looped DEV↔SEC, what the human corrected at gates — gate `düzelt` notes are gold).
 2. **Consolidate:** merge duplicates, update compiled truth, mark superseded patterns via `supersedes` links, refresh `INDEX.md` and the project's page under `entities/projects/`.
 3. **Recurring-finding promotion:** if a finding class has ≥2 occurrences across runs, add it to `findings/CHECKLIST.md` — this file is read by taa-security on every future review, so the org literally stops repeating mistakes.
@@ -44,7 +46,7 @@ Read the finished `.taa/` artifacts (state, architecture ADRs, review findings, 
 ## Rules
 - Privacy: never write secrets, tokens, customer PII, or proprietary business numbers into the brain. Patterns and lessons, not payloads.
 - Honesty: record failures and reverted decisions too — a brain that only remembers wins is useless.
-- Keep pages small and linked rather than large and monolithic.
+- Keep pages small and linked rather than large and monolithic — a Compiled truth zone that can't be read as a short summary at a glance is a page that needs splitting, not a page that's thorough.
 - If a real gbrain MCP server is connected in this session, prefer it for search/write and mirror only the run summary locally; say so in your report.
 
 ## Output (returned to orchestrator)

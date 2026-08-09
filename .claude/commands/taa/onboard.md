@@ -4,8 +4,10 @@ argument-hint: [focus area, e.g. "billing module" - omit for whole-project onboa
 ---
 
 Invoke `taa-brain` (RECALL mode, broad query covering the focus area or the
-whole project if none given) together with a read of `.taa/architecture.md`,
-`.taa/SPEC.md`, and the actual repo structure. Synthesize an onboarding
+whole project if none given) together with a read of the active run's
+`architecture.md` and `SPEC.md` if one exists (`.taa/runs/*/`), else the most
+recently archived run's (`.taa/archive/*/`, pick the newest by date — name
+which one you used), and the actual repo structure. Synthesize an onboarding
 document for a new developer who has never seen this codebase.
 
 Cover, in this order:

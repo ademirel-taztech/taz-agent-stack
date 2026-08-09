@@ -17,6 +17,67 @@ flowchart TD
     QAB -->|green| DONE[DONE: scoreboard + PR description]
 ```
 
+## Directory layout — one folder per run
+
+`.taa/` used to collect every stage's output as flat, fixed-name files
+(`.taa/SPEC.md`, `.taa/architecture.md`, ...) directly overwritten on every
+new pipeline run, with old runs' copies (`SPEC-<slug>.md`,
+`architecture-<slug>.md`, ...) piling up loose next to them. In a project
+with a dozen finished features this became 100+ ungrouped files, and any
+agent instruction like "read existing `.taa/` files first" would sweep all
+of them in — burning tokens on nine irrelevant past features to plan a
+tenth. The layout now is:
+
+```
+.taa/
+  runs/<run-id>/          the ONE active run (0 or 1 at a time per worktree)
+    state.md              Track: CODE|FIX|DOCS|MARKETING|REFACTOR|RELEASE|UPGRADE|INCIDENT
+                           Chief: full|light  (see "CHIEF opt-out" below)
+    RESEARCH.md, SPEC.md, backlog.md, DESIGN.md, design/, architecture.md,
+    invariants.md, metrics.md, tests/, review.md, compliance.md,
+    data-review.md, DOCPLAN.md, runbook-*.md, brain-briefing.md ...
+    (exactly the same filenames as before — just nested one level down)
+  archive/<run-id>/       completed runs, moved here at the DREAM/completion step
+  archive/INDEX.md        one line per archived run — see below
+  inputs/                 doc-ingest output — cross-run, documents get reused
+  explain/                taa-explainer reports — read-only track, not a gated run
+  marketing/              already self-namespaced (YYYY-MM-DD-<channel>-<slug>.md)
+  reports/                doc-export output
+.taa-brain/                unchanged — cross-project institutional memory, never per-run
+```
+
+**Rules:**
+- Every gated, multi-stage track (`/taa:start`, `/taa:fix`, `/taa:refactor`,
+  `/taa:docs`, `/taa:marketing`, `/taa:release`, `/taa:upgrade`,
+  `/taa:incident`) creates its own `.taa/runs/<run-id>/` at stage 0 and does
+  all its reading/writing inside it. A `.taa/X.md` path named in any agent's
+  instructions means `<run-dir>/X.md` — the orchestrator passes the resolved
+  absolute run-dir path in every subagent task prompt, and each agent file
+  says so explicitly near the top.
+- **Agents never glob/grep `.taa/` outside the run directory they were
+  given.** "Read existing `.taa/` files" always means "read existing files
+  *in this run's directory*" — never a sweep of `.taa/runs/*` or
+  `.taa/archive/*`.
+- Only one run lives under `.taa/runs/` at a time (same single-active-run
+  rule as before — use a git worktree per concurrent feature, see "Multiple
+  concurrent runs" below).
+- **Archiving.** When a run reaches DONE (after DREAM), the orchestrator
+  moves `.taa/runs/<run-id>/` → `.taa/archive/<run-id>/` (`git mv` if
+  tracked) and appends **one line** to `.taa/archive/INDEX.md`:
+  `- <run-id> — <track> — <one-sentence outcome> — <YYYY-MM-DD>`.
+  That index line is the only trace future pipeline runs see by default;
+  the full archived folder stays on disk (and in git history) for anyone
+  who deliberately opens it, but no agent reads into `archive/` unless the
+  human explicitly points it at a past run.
+- **CHIEF opt-out.** For a small/internal feature, `/taa:start` asks once at
+  Stage 0: *"Basit bir feature — CHIEF her gate'te mi, yoksa sadece SEC
+  gate'inde mi çalışsın?"* The answer is recorded as `Chief: full` (every
+  gate, default) or `Chief: light` (only before the SEC gate and the final
+  DREAM summary) in that run's `state.md`. Every stage's gate step checks
+  this flag before invoking `taa-chief` — `light` skips roughly two-thirds
+  of CHIEF's subagent invocations on a simple run without dropping the one
+  advisory check that matters most (the safety gate).
+
 ## Design principles
 
 1. **Separation of powers.** Each role is a separate subagent with its own context
@@ -61,21 +122,22 @@ flowchart TD
 
 ## Multiple concurrent runs
 
-`.taa/state.md` has one **Run ID** per working tree — it's not designed to
-interleave two unrelated feature pipelines at once. For parallel features,
-give each its own `git worktree` (and therefore its own `.taa/`):
+Only one directory lives under `.taa/runs/` per working tree — it's not
+designed to interleave two unrelated feature pipelines at once. For parallel
+features, give each its own `git worktree` (and therefore its own `.taa/`):
 
 ```bash
 git worktree add ../myproject-licensing feature/licensing
 cd ../myproject-licensing
-# run /taa:start there — its own .taa/state.md, its own Run ID
+# run /taa:start there — its own .taa/runs/<run-id>/, its own Run ID
 ```
 
 Each worktree gets independent gates, independent brain-recall context (the
 brain itself is still shared — it's global/project-scoped, not per-worktree),
-and independent `.taa/` artifacts that merge normally with the feature branch.
-Don't run two `/taa:start` pipelines against the same `.taa/state.md` — the
-orchestrator will refuse and point you here instead.
+and independent `.taa/runs/` artifacts that merge normally with the feature
+branch. Don't run two `/taa:start` pipelines against the same working tree —
+the orchestrator will refuse (it checks for an existing, non-archived
+directory under `.taa/runs/`) and point you here instead.
 
 ## FAQ
 
@@ -86,4 +148,5 @@ test logs; isolated subagents keep the orchestrator sharp and make each role aud
 a new endpoint, schema change, or UI surface goes through the full pipeline.
 
 **Where does `.taa/` live in git?** Commit it. It's your spec, ADR and review history —
-reviewers love it. Add `.taa/tests/bin|obj` style build noise to `.gitignore` if needed.
+reviewers love it — including `.taa/archive/`, which is the project's searchable pipeline
+history. Add `.taa/runs/*/tests/bin|obj` style build noise to `.gitignore` if needed.

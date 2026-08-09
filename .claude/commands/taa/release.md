@@ -9,6 +9,9 @@ Do not deploy, tag, or push anything yourself — this command produces the
 plan and the text; **every deploy/tag/push action is the human's**, taken
 outside this command after they've reviewed the output.
 
+## 0. Run directory
+Create `.taa/runs/<run-id>/` (Run ID = timestamp-slug + `release`) and `<run-dir>/state.md` with `Track: RELEASE`, same as `/taa:start` §0. Pass `<run-dir>` explicitly to every subagent below. On completion, archive it the same way `/taa:start` does.
+
 ## Stages
 
 | # | Stage | Subagent | Produces | Gate |

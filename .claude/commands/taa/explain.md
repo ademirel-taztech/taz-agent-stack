@@ -36,9 +36,10 @@ and produce a confident trace of the wrong thing.
   answer it — not into the call-path table.
 
 ## Grounding
-Every hop carries a `file:line` citation. `.taa/architecture.md` states intent; the code
-states reality — where they disagree, the code wins and the drift is reported explicitly
-(that drift is a `/taa:dream` input and often an ADR that needs updating).
+Every hop carries a `file:line` citation. The active (or most recently archived) run's
+`architecture.md` states intent; the code states reality — where they disagree, the code
+wins and the drift is reported explicitly (that drift is a `/taa:dream` input and often an
+ADR that needs updating).
 
 ## Output
 `.taa/explain/<slug>.md` + a chat summary: the one-paragraph explanation, the call-path

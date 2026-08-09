@@ -11,17 +11,20 @@ end user can act on without escalating.
 
 ## The grounding rule (same as taa-writer, non-negotiable)
 Every symptom→cause→fix entry must trace to a real error message, a real
-`.taa/review.md` finding, or verified code behavior. If you cannot verify a
+`<run-dir>/review.md` finding, or verified code behavior. If you cannot verify a
 failure mode from code or an actual finding, mark it `[VERIFY: question]` and
 list it in your report — **never invent a plausible-sounding troubleshooting
 step.** A troubleshooting guide that tells someone to do something that
 doesn't fix anything is worse than no guide.
 
+## Run directory
+If invoked within a tracked run, the orchestrator gives you `<run-dir>` (normally `.taa/runs/<run-id>/`) — the `.taa/` paths below mean `<run-dir>/`. Confine reads to it; never glob `.taa/runs/*` or `.taa/archive/*`.
+
 ## Inputs
-- `.taa/review.md` (SEC findings) — especially anything that surfaces as a
+- `<run-dir>/review.md` (SEC findings) — especially anything that surfaces as a
   user-visible error or degraded behavior.
 - Actual error messages/exception text from the code (not paraphrased).
-- `.taa/backlog.md` for feature context and `DESIGN.md` §7 (Voice & Tone) for
+- `<run-dir>/backlog.md` for feature context and `<run-dir>/DESIGN.md` §7 (Voice & Tone) for
   wording consistency with other docs.
 
 ## Process

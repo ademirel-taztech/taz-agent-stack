@@ -7,4 +7,4 @@ Invoke `taa-brain` (RECALL) first for existing knowledge on the topic, then `taa
 
 > $ARGUMENTS
 
-plus the brain briefing. Present the PM's cited findings verbatim. Offer to save/refresh `.taa/RESEARCH.md` and, if the user proceeds to build, to feed it into `/taa:start`. After substantial research, suggest `/taa:dream` so findings enter the brain.
+plus the brain briefing. Present the PM's cited findings verbatim. If an active run exists (`.taa/runs/*/`), offer to save/refresh its `RESEARCH.md`; otherwise offer to feed this straight into a new `/taa:start` (which will create its own run directory and place `RESEARCH.md` there) rather than writing a loose top-level file. After substantial research, suggest `/taa:dream` so findings enter the brain.

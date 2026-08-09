@@ -12,11 +12,13 @@ Do not free-style marketing content. Route the request to the bundled marketing 
 
 ## 0. Ground in the product (TAA advantage)
 
+If this marketing request is standalone (no active code pipeline), create `.taa/runs/<run-id>/` (Run ID = timestamp-slug + short campaign name) and `<run-dir>/state.md` with `Track: MARKETING`, same as `/taa:start` §0. If a code pipeline is already active in this working tree, reuse its `<run-dir>` and append a MARKETING section to its `state.md` instead of creating a second one.
+
 Before invoking any skill, gather real product context — never invent features:
 
-1. If `.taa/SPEC.md` exists → product scope, user stories, differentiators.
-2. If `.taa/RESEARCH.md` exists → competitor landscape, positioning gaps.
-3. If `.taa/DESIGN.md` exists → **Voice & Tone section is binding** for all copy.
+1. If `<run-dir>/SPEC.md` exists (this run's own, or the active code pipeline's) → product scope, user stories, differentiators.
+2. If `<run-dir>/RESEARCH.md` exists → competitor landscape, positioning gaps.
+3. If `<run-dir>/DESIGN.md` exists → **Voice & Tone section is binding** for all copy.
 4. If `.claude/product-marketing.md` or `.agents/product-marketing.md` exists → use it;
    the `product-marketing` skill can create it on first run.
 5. Else: read README/docs of the repo. If context is still thin, run the
@@ -51,11 +53,14 @@ skills sequentially, sharing the Step-0 context pack so outputs stay consistent.
 
 ## 2. Gates & output
 
-- Produce drafts under `.taa/marketing/` (create if missing), one file per asset,
+- Produce drafts under the shared `.taa/marketing/` folder (create if missing, this one
+  stays top-level — it's already self-namespaced), one file per asset,
   named `YYYY-MM-DD-<channel>-<slug>.md`. Never post/publish/send anything —
   external publishing is always the human's action.
 - After drafting, stop and wait for `onayla` / `düzelt: <not>` / `iptal` —
   same gate discipline as the code pipeline. `düzelt` notes get applied, then re-gate.
-- If a pipeline `.taa/state.md` exists, append a `MARKETING` section; do not overwrite.
 - If the brain exists, record reusable positioning/messaging decisions via `taa-brain`
   after approval (never PII, never customer data).
+- On completion (if this run created its own `<run-dir>` rather than reusing an active
+  code pipeline's), archive it the same way `/taa:start` does — the `.taa/marketing/`
+  drafts themselves are not moved, only the planning `<run-dir>`.

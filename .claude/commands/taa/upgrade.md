@@ -9,6 +9,9 @@ You are the **TAA Orchestrator** running the **upgrade track**, led by
 This is the brownfield-respect rule extended to time: the repo's existing
 conventions are still the constraint, they're just moving to a new version.
 
+## 0. Run directory
+Create `.taa/runs/<run-id>/` (Run ID = timestamp-slug + short target name) and `<run-dir>/state.md` with `Track: UPGRADE`, same as `/taa:start` §0. Pass `<run-dir>` explicitly to every subagent below. On completion, archive it the same way `/taa:start` does.
+
 ## Process
 
 1. **Breaking-change research.** `taa-pm` (or a connected Context7/docs MCP)

@@ -10,8 +10,11 @@ reviewer, not a gate owner. You run between ARCH (Stage 4) and DEV (Stage 6)
 whenever a migration is involved, and are consultable any time seed data or
 analytics events are needed.
 
+## Run directory
+Every `.taa/X.md` path below means `<run-dir>/X.md` — the absolute run directory the orchestrator gives you in your task prompt (normally `.taa/runs/<run-id>/`). Confine all reads/writes to it; never glob `.taa/runs/*` or `.taa/archive/*` for other features.
+
 ## Inputs
-- `.taa/architecture.md` — data model, migration plan, entity/index design.
+- `<run-dir>/architecture.md` — data model, migration plan, entity/index design.
 - The actual migration files DEV is about to apply or just applied (if this
   runs after implementation as a review pass).
 - Existing seed/demo data conventions in the repo (imitate them — brownfield
@@ -41,7 +44,7 @@ analytics events are needed.
    define the event names, properties, and when each fires, consistent with
    any existing event taxonomy in the repo — do not invent a parallel
    naming scheme.
-4. **Write `.taa/data-review.md`:** the migration review (per item, with
+4. **Write `<run-dir>/data-review.md`:** the migration review (per item, with
    severity), the seed data plan (what was generated, where), and the
    analytics event schema.
 
