@@ -170,9 +170,10 @@ else
   echo "✔ Created CLAUDE.md"
 fi
 
-# .taa/*.md (state, SPEC, backlog, review, etc.) is meant to be committed as
-# the project's audit trail — but generated binary/regenerable output from
-# doc-ingest/doc-export/the eval harness is noise, not source of truth.
+# Everything under .taa/runs/<id>/ and .taa/archive/<id>/ (state, SPEC,
+# backlog, review, etc.) is meant to be committed as the project's audit
+# trail — but generated binary/regenerable output from doc-ingest/doc-export/
+# the eval harness is noise, not source of truth.
 touch "$TARGET/.gitignore"
 for pattern in ".taa/inputs/" ".taa/reports/" "**/evals/results-*"; do
   grep -qxF "$pattern" "$TARGET/.gitignore" 2>/dev/null || echo "$pattern" >> "$TARGET/.gitignore"
