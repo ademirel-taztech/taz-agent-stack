@@ -131,6 +131,60 @@ install.sh
 
 ## Kurulum seçenekleri
 
+### Ön koşullar
+
+TAA'nın hangi yolunu kullanırsanız kullanın şu temel araçlar hazır olmalıdır:
+
+- **Git** — depoyu indirmek ve güncellemek için
+- **Claude Code** ve/veya **OpenAI Codex** — pipeline'ı çalıştırmak için
+- **Python 3 + pip** — `taa` CLI ve LiteLLM/doc bağımlılıkları için
+
+`taa launch claude` akışı **LiteLLM proxy** kullandığı için ayrıca şu bağımlılık zorunludur:
+
+```bash
+pip install "litellm[proxy]"
+```
+
+`/taa:ingest` ve `/taa:report` için doküman I/O bağımlılıkları ayrıca gerekir. `./install.sh --with-docs` bunların pip tarafını kurar ve eksik binary'leri kontrol eder:
+
+```bash
+pip install -r requirements-doc.txt
+```
+
+Ek doküman araçları:
+
+- `pandoc` — docx/pdf derleme
+- `soffice` (LibreOffice) — legacy Office formatları ve render doğrulama
+- `mmdc` (`@mermaid-js/mermaid-cli`) — Mermaid diyagram render'ı
+
+macOS için önerilen temel kurulum:
+
+```bash
+brew install jq
+pip install "litellm[proxy]"
+```
+
+Windows için önerilen temel kurulum:
+
+```powershell
+winget install --id Git.Git -e
+winget install --id Python.Python.3.12 -e
+winget install --id OpenJS.NodeJS.LTS -e
+python -m pip install --upgrade pip
+pip install "litellm[proxy]"
+npm install -g @mermaid-js/mermaid-cli
+winget install --id Pandoc.Pandoc -e
+winget install --id TheDocumentFoundation.LibreOffice -e
+```
+
+Windows'ta ayrıca şunlar önerilir:
+
+- **PowerShell 5.1+ veya PowerShell 7** — `bin/taa.ps1` bununla çalışır
+- **Git Bash** veya **WSL** — `install.sh` bash betiği olduğu için gereklidir
+- Yeni terminal açmak — `PATH` değişiklikleri ve global `taa` komutu için
+
+> Not: Windows CLI tarafında `jq` gerekmez; `Templates/bin/taa.ps1` ve `Templates/bin/taa.cmd` yalnızca PowerShell + `litellm` varsayar. `jq` kontrolü sadece Unix betiğinde vardır.
+
 **1. Plugin (önerilen)** — projenize dosya kopyalanmaz; agent'lar, komutlar, TAA Guard hook'u ve şablonlar plugin içinden yüklenir, güncelleme tek komut:
 
 ```bash
@@ -145,6 +199,44 @@ git clone https://github.com/ademirel-taztech/taz-agent-stack && cd taz-agent-st
 ./install.sh /path/to/project   # .claude/ + templates/ + scripts/ hedef projeye kopyalanır
 ./install.sh --global           # agents/commands tüm projeler için ~/.claude'a + ~/.taa/brain
 ./install.sh /path/to/project --with-docs   # + doc-ingest/doc-export pip bağımlılıkları, pandoc/soffice/mmdc kontrolü
+```
+
+Windows'ta aynı akışı **Git Bash** veya **WSL** içinden çalıştırın:
+
+```bash
+git clone https://github.com/ademirel-taztech/taz-agent-stack.git
+cd taz-agent-stack
+
+# Proje içine kurulum
+./install.sh /c/Users/<kullanici>/Projects/<proje>
+
+# Proje içine kurulum + doc-ingest/doc-export bağımlılıkları
+./install.sh /c/Users/<kullanici>/Projects/<proje> --with-docs
+
+# Global kurulum (~/.claude + ~/.taa/brain + C:\tools\taa)
+./install.sh --global
+
+# Global kurulum + docs bağımlılıkları
+./install.sh --global --with-docs
+```
+
+Windows'ta `install.sh --global` başarılı olursa:
+
+- `C:\tools\taa\taa.ps1`
+- `C:\tools\taa\taa.cmd`
+
+dosyaları oluşturulur ve installer kullanıcı `PATH`'ine `C:\tools\taa` eklemeyi dener. Terminali kapatıp yeniden açtıktan sonra `taa` komutu kullanılabilir. `PATH` otomatik eklenemezse installer bunu ayrıca söyler; bu durumda `C:\tools\taa` klasörünü kullanıcı `PATH`'ine elle ekleyin.
+
+Windows'ta proje içine kurulum yapıldıysa doğrudan şu dosyalardan biri kullanılabilir:
+
+```powershell
+.\bin\taa.ps1 list
+.\bin\taa.ps1 launch codex --supplier local-engine --model qwen2.5-coder
+```
+
+```cmd
+bin\taa.cmd list
+bin\taa.cmd launch claude --supplier nvidia --model z-ai/glm-5.2
 ```
 
 Bu yol ayrıca `taa` CLI'sini de kurar. Proje kurulumu `bin/taa`, `bin/taa.ps1` ve `bin/taa.cmd` üretir. Global kurulumda platforma göre şunlar hedeflenir:
@@ -175,6 +267,22 @@ brew install jq
 # LiteLLM Proxy bağımlılığı (proxy opsiyonu şarttır)
 pip install "litellm[proxy]"
 ```
+
+Windows için önerilen kurulum:
+
+```powershell
+python -m pip install --upgrade pip
+pip install "litellm[proxy]"
+```
+
+Doküman hattını da kullanacaksanız:
+
+```powershell
+pip install -r .\requirements-doc.txt
+npm install -g @mermaid-js/mermaid-cli
+```
+
+ve sistemde `pandoc` ile `LibreOffice` (`soffice`) kurulu olmalıdır. `install.sh --with-docs` bu eksikleri sizin yerinize kurmaz; pip paketlerini yükler ve hangi dış araçların eksik olduğunu raporlar.
 
 ### Komut Sözdizimi ve Kullanım Örnekleri
 
