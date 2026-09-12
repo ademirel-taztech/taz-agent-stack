@@ -14,8 +14,20 @@ flowchart TD
     SEC -->|Critical/High findings| DEV
     SEC -->|gate passed| QAB[taa-qa Phase B\nmetric scoreboard]
     QAB -->|metric fail, max 3 loops| DEV
-    QAB -->|green| DONE[DONE: scoreboard + PR description]
+    QAB -->|green| GATE{taa-check-backlog.sh:\nall items DONE?}
+    GATE -->|no| DEV
+    GATE -->|yes| DREAM[taa-brain DREAM\nconsolidation]
+    DREAM --> DONE[DONE: scoreboard + PR description]
 ```
+
+Every backlog item (`backlog.template.md`) carries a `Status` (`TODO |
+IN_PROGRESS | BLOCKED: reason | DONE`) and a `Prompt` — one self-contained,
+imperative instruction PO writes so DEV (or another subagent) can execute the
+task without re-reading the whole run. `scripts/taa-check-backlog.sh
+<run-dir> <repo-root>` is the mechanical (non-LLM) gate right before DREAM:
+it fails the run back to DEV if any item isn't `DONE`, or if a code
+`TODO`/`FIXME` still cites a `TAA-###` id the backlog claims is `DONE`. SEC
+runs the same check during its own review (§ Audit checklist, `taa-security.md`).
 
 ## Directory layout — one folder per run
 

@@ -1,0 +1,60 @@
+# Deterministik test ortamı. Her koşum temiz veriyle başlar:
+#   docker compose -f docker-compose.test.yml down -v
+#   docker compose -f docker-compose.test.yml up --build --wait
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: appdb_test
+    tmpfs: [/var/lib/postgresql/data]   # kalıcı olmasın, her seferinde sıfır
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 20
+
+  # 3. parti bağımlılıkları gerçek servise değil, mock'a bağla
+  mockserver:
+    image: wiremock/wiremock:3.9.1
+    command: ["--global-response-templating", "--verbose"]
+    volumes:
+      - ./tests/fixtures/wiremock:/home/wiremock
+    ports: ["8089:8080"]
+
+  backend:
+    build: ./backend
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgres://test:test@db:5432/appdb_test
+      REDIS_URL: redis://redis:6379
+      PAYMENT_API_URL: http://mockserver:8080/payments
+      JWT_SECRET: test-secret-do-not-use-in-prod
+      SEED_ON_BOOT: "true"           # qa_user / qa_admin kullanıcılarını yarat
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    ports: ["4000:4000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4000/api/health"]
+      interval: 5s
+      retries: 30
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      backend: { condition: service_healthy }
+    ports: ["3000:3000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 5s
+      retries: 30

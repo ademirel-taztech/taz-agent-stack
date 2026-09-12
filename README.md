@@ -109,10 +109,13 @@ CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'len
 `codex/agents/` arasında drift olursa build'i kırar.
 
 ```
-.claude/agents/        16 rol: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer, taa-explainer
+.claude/agents/        16 pipeline rolü: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer, taa-explainer
+                       + 5 bağımsız QA-kit subagent'ı: test-strategist, e2e-engineer, api-test-engineer, perf-engineer, test-triager
 .claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard, explain
 .claude/skills/        46 marketing skill'i (MIT, Corey Haines) + doc-ingest + doc-export — /taa:marketing ve /taa:ingest·/taa:report bunlara yönlendirir
+                       + QA-kit: test-discovery, test-plan, test-automate, test-run (bkz. § Test hattı)
 requirements-doc.txt    doc-ingest/doc-export'un opsiyonel pip bağımlılıkları (`./install.sh --with-docs`)
+templates/qa-kit/      QA-kit senaryo/plan şablonları + Playwright/k6/Docker/CI örnekleri (bkz. § Test hattı)
 scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookEdit) — deterministik bloklar
 scripts/taa-guard-pretooluse.sh PreToolUse hook — secret şekilleri yazılmadan önce reddedilir
 scripts/taa-guard-bash-scan.sh  PostToolUse/Bash hook — Bash'le yazılan dosyaları `git status` ile yeniden tarar
@@ -371,12 +374,37 @@ Kod değil doküman ürettirmek için aynı disiplinin hafif hattı: **BRAIN →
 
 ## Pazarlama hattı: `/taa:marketing`
 
-Yazılımı üreten aynı stack onu pazarlar da: [Corey Haines'in marketingskills](https://github.com/coreyhaines31/marketingskills) paketi (MIT) `.claude/skills/` altında **46 skill** olarak gömülü — sosyal post, blog/copywriting, video senaryosu, launch, SEO/AI-SEO, reklam, e-posta/SMS, pricing, CRO, churn, rakip analizi ve dahası. `/taa:marketing <talep>` tek giriş noktasıdır: talebi doğru skill(ler)e yönlendirir ve TAA farkını ekler — **içerik `.taa/` artefaktlarına dayanır** (SPEC'teki gerçek özellikler, RESEARCH'teki rakip konumu, DESIGN.md'nin Voice & Tone'u bağlayıcı), uydurma iddia/metrik yasak (writer'la aynı grounding kuralı), taslaklar `.taa/marketing/` altına düşer, **yayınlamak daima insanın eylemidir.** Skill'ler doğrudan da çağrılabilir (`/social`, `/launch`, `/pricing`…).
+Yazılımı üreten aynı stack onu pazarlar da: [Corey Haines'in marketingskills](https://github.com/coreyhaines31/marketingskills) paketi (MIT) `.claude/skills/` altında **46 skill** olarak gömülü — sosyal post, blog/copywriting, video senaryosu, launch, SEO/AI-SEO, reklam, e-posta/SMS, pricing, CRO, churn, rakip analizi ve dahası. `/taa:marketing <talep>` tek giriş noktasıdır: talebi doğru skill(ler)e yönlendirir ve TAA farkını ekler — **içerik `.taa/` artefaktlarına dayanır** (SPEC'teki gerçek özellikler, RESEARCH'teki rakip konumu, DESIGN.md'nin Voice & Tone'u bağlayıcı), uydurma iddia/metrik yasak (writer'la aynı grounding kuralı), taslaklar `.taa/marketing/` altına düşer, **yayınlamak daima insanın eylemidir.** Skill'ler doğrudan da çağrılabilir (`/social`, `/launch`, `/pricing`…). Instagram/LinkedIn gibi görsel-ağırlıklı kanallarda `social` metni yazdıktan sonra orkestratör otomatik olarak **`design`** (Claude Design canvas) ile `DESIGN.md`'nin palette/typography'sine bağlı, marka-tutarlı bir görsel de üretir (quote card/carousel slide/kapak — API key gerektirmez); fotogerçekçi görsel gerekiyorsa `image` skill'i ayrıca ve isteğe bağlı devreye girer.
 
 ```
 /taa:marketing launch: lisanslama modülü v2 — LinkedIn postu + blog + 30sn video senaryosu
 /taa:marketing pricing sayfamızı Van Westendorp'a göre gözden geçir
 ```
+
+## Test hattı: QA-kit
+
+Pipeline'ın `taa-qa` aşamasından bağımsız, herhangi bir repoda tam kapsamlı test
+mühendisliği yapmak için ayrı bir skill + subagent seti: **keşif → senaryo (onay)
+→ otomasyon → koşum**, dört ayrı beceriye bölünmüş — tek bir "her şeyi test et"
+prompt'u hem neyin test edileceğini bilmez hem de testleri gerçekten koşturamaz.
+
+```
+/test-discovery   repo taranır, FE route + BE endpoint haritası çıkar → docs/qa/00-discovery.md
+/test-plan        risk tabanlı, insan okunur senaryolar üretir        → docs/qa/*.md   [ONAY]
+/test-automate     senaryolar Playwright/k6 koduna çevrilir            → tests/**
+/test-run          çalıştırır, triage eder, raporlar                  → docs/qa/reports/
+```
+
+Senaryo fazından sonra durup onay alması kasıtlıdır. Dört uzman subagent doğrudan
+da çağrılabilir: `test-strategist` (risk tabanlı strateji, kod yazmaz),
+`e2e-engineer` (Playwright UI/E2E/smoke/a11y), `api-test-engineer` (API/sözleşme/
+authz), `perf-engineer` (k6 yük/stres + Lighthouse), `test-triager` (kırmızı testin
+kök nedenini kanıtla ayırır: uygulama bug'ı mı, test bug'ı mı, flaky mi).
+Değişmez kurallar CLAUDE.md § QA / Test Kuralları'nda kilitlidir: prod'da test
+koşulmaz, `waitForTimeout`/sabit `sleep` yasak, retry ile flaky gizlenmez,
+eşiksiz yük testi yazılmaz, kırmızı testi geçirmek için assertion gevşetilmez.
+Örnek `playwright.config.ts` / `docker-compose.test.yml` / `k6-load.js` /
+GitHub Actions `qa.yml` ve senaryo/plan şablonları `templates/qa-kit/` altındadır.
 
 ## Taz.SaaS / brownfield
 
@@ -401,7 +429,7 @@ ederek eklenebilirler.
 
 ## English quickstart
 
-TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 16 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, a read-only code Explainer that traces an execution path across layers with a `file:line` citation per hop, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back — a full software-company agent set: build it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
+TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 16 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, a read-only code Explainer that traces an execution path across layers with a `file:line` citation per hop, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back, and a standalone QA-kit (`/test-discovery` → `/test-plan` [approval] → `/test-automate` → `/test-run`, plus 5 specialist subagents for Playwright E2E, API/contract, k6 load, and red-test triage) for repos that need full test-engineering coverage outside the pipeline — a full software-company agent set: build it, test it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
 
 ```bash
 # recommended — nothing is copied into your project:

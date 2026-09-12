@@ -24,19 +24,23 @@ When this run reaches DONE, the orchestrator moves this whole directory to
 just needs to stay lean *while the run is active*. -->
 
 ## Stage board
-| Stage | Status | Approved at | Notes |
-|-------|--------|-------------|-------|
-| BRAIN | ⏳ pending | | recall briefing |
-| PM    | ⏳ pending | | research |
-| PO    | ⏳ pending | | |
-| DES   | ⏳ pending | | may run parallel with ARCH (opt-in) |
-| ARCH  | ⏳ pending | | may run parallel with DES (opt-in) |
-| QA-A  | ⏳ pending | | |
-| DEV   | ⏳ pending | | |
-| OPS   | ⏳ pending | | Dockerfile/CI/migration+rollback/runbook |
-| SEC   | ⏳ pending | | + COMPLIANCE if SPEC has personal data |
-| QA-B  | ⏳ pending | | |
-| DREAM | ⏳ pending | | consolidation |
+<!-- Started/Approved are ISO timestamps, filled in as each stage runs — this is
+what `/taa:status` and the backlog-completion check read to spot a stage that
+is silently eating the run's time budget; it's observational only, never a
+gate condition itself. -->
+| Stage | Status | Started at | Approved at | Notes |
+|-------|--------|------------|-------------|-------|
+| BRAIN | ⏳ pending | | | recall briefing |
+| PM    | ⏳ pending | | | research |
+| PO    | ⏳ pending | | | |
+| DES   | ⏳ pending | | | may run parallel with ARCH (opt-in) |
+| ARCH  | ⏳ pending | | | may run parallel with DES (opt-in) |
+| QA-A  | ⏳ pending | | | |
+| DEV   | ⏳ pending | | | |
+| OPS   | ⏳ pending | | | Dockerfile/CI/migration+rollback/runbook |
+| SEC   | ⏳ pending | | | + COMPLIANCE if SPEC has personal data |
+| QA-B  | ⏳ pending | | | |
+| DREAM | ⏳ pending | | | consolidation; blocked until backlog has zero TODO/IN_PROGRESS/BLOCKED items (see start.md § Completion) |
 
 ## Decision log
 <!-- orchestrator appends: timestamp — stage — onayla/düzelt + note -->

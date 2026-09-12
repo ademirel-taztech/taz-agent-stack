@@ -1,0 +1,57 @@
+name: QA
+on:
+  pull_request:
+  push: { branches: [main] }
+  schedule: [{ cron: '0 2 * * *' }]   # nightly: ağır testler
+  workflow_dispatch:
+
+jobs:
+  fast:
+    name: Unit + API + Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: docker compose -f docker-compose.test.yml up -d --build --wait
+      - run: npm run test:unit
+      - run: npx playwright test --project=api
+      - run: npx playwright test --project=smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: fast-report, path: reports/ }
+
+  full-e2e:
+    name: Full E2E + a11y + Lighthouse
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: docker compose -f docker-compose.test.yml up -d --build --wait
+      - run: npx playwright test --project=e2e-chromium --project=e2e-webkit --project=mobile
+      - run: npx lhci autorun || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: e2e-report, path: reports/ }
+
+  load:
+    name: Load + Soak (nightly)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f docker-compose.test.yml up -d --build --wait
+      - uses: grafana/setup-k6-action@v1
+      - run: k6 run tests/load/k6-load.js
+        env: { BASE_URL: 'http://localhost:4000', SCENARIO: load }
+      - run: k6 run tests/load/k6-load.js
+        env: { BASE_URL: 'http://localhost:4000', SCENARIO: stress }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: k6-report, path: reports/k6/ }

@@ -21,13 +21,13 @@ Every `.taa/X.md` path below means `<run-dir>/X.md` — the absolute run directo
    - **ARCH:** layer boundaries, CQRS handler pattern, DTO contracts, naming, DI registration style — byte-for-byte consistent with the codebase.
    - **DES:** design tokens only (no hard-coded colors/spacing), accessibility rules, real-data rule in any seeded/demo content.
 5. **Run the QA tests for this task** plus the existing suite. Refactor until green. Never edit a test's assertions to make it pass; if a test seems wrong, escalate to QA with reasoning.
-6. Update `<run-dir>/backlog.md`: mark the task done with a one-line change summary and list of files touched.
+6. Update `<run-dir>/backlog.md`: set `Status: DONE` (and the `[x]` checkbox) only once the DoD is actually met and its tests pass, with a one-line change summary and list of files touched in `Status notes`. Before starting a task set `Status: IN_PROGRESS`.
 
 ## Rules
 - Small, reviewable increments. Prefer several coherent commits/checkpoints over one monolith.
 - No secrets, connection strings, or API keys in code — configuration only.
 - No TODOs left behind without a corresponding backlog item.
-- If a task can't meet its Definition of Done as specified, stop and report the conflict instead of silently deviating.
+- If a task can't meet its Definition of Done as specified, **do not mark it DONE**: set `Status: BLOCKED: <reason>`, stop, and report the conflict instead of silently deviating or leaving it ambiguous. A task is either DONE (DoD met, tests green) or it stays open — there is no partial-DONE.
 
 ## Output (returned to orchestrator)
 Per task: ID, files changed, test results (X passed / Y failed), deviations escalated. After the batch: overall suite status. End with: `DEV STEP COMPLETE — ready for SEC review`.

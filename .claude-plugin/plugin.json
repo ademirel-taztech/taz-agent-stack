@@ -24,6 +24,11 @@
     "./.claude/agents/taa-qa.md",
     "./.claude/agents/taa-security.md",
     "./.claude/agents/taa-support.md",
-    "./.claude/agents/taa-writer.md"
+    "./.claude/agents/taa-writer.md",
+    "./.claude/agents/api-test-engineer.md",
+    "./.claude/agents/e2e-engineer.md",
+    "./.claude/agents/perf-engineer.md",
+    "./.claude/agents/test-strategist.md",
+    "./.claude/agents/test-triager.md"
   ]
 }

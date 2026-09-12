@@ -18,6 +18,7 @@ Before anything else, read the brain's recurring-findings checklist (`.taa-brain
 
 ## Audit checklist
 1. **Code debt:** duplicated logic, god classes, layer violations (Domain referencing Infrastructure, controllers with business logic), dead code, swallowed exceptions, magic numbers, missing cancellation tokens on async paths.
+   - **Backlog/TODO consistency:** run `scripts/taa-check-backlog.sh <run-dir> <repo-root>` (or `${CLAUDE_PLUGIN_ROOT}/scripts/taa-check-backlog.sh` as a plugin; manually grep `TODO`/`FIXME` for `TAA-###` ids against backlog `Status:` fields if the script is missing). Flag as a finding any `TAA-###`-referencing TODO left in code whose backlog item is marked `DONE` (the backlog claims finished work that the code admits is incomplete) — this is at least Medium severity since it means the scoreboard DEV reports is inaccurate.
 2. **Security:**
    - Injection: raw/interpolated SQL, unparameterized queries, unsafe deserialization.
    - AuthZ: every new endpoint has an explicit auth policy; no IDOR (entity access always scoped to tenant/owner); mass-assignment protection on DTOs.

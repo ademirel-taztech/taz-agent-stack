@@ -102,6 +102,7 @@ if [[ "${ARGS[0]:-}" == "--global" ]]; then
   DEST="$HOME/.claude"
   mkdir -p "$DEST/agents" "$DEST/commands/taa" "$DEST/skills"
   cp "$SRC/.claude/agents/"taa-*.md "$DEST/agents/"
+  cp "$SRC/.claude/agents/"{api-test-engineer,e2e-engineer,perf-engineer,test-strategist,test-triager}.md "$DEST/agents/"
   cp "$SRC/.claude/commands/taa/"*.md "$DEST/commands/taa/"
   cp -R "$SRC/.claude/skills/." "$DEST/skills/"
   mkdir -p "$HOME/.taa/brain" && cp -rn "$SRC/templates/brain/." "$HOME/.taa/brain/" 2>/dev/null || true
@@ -129,17 +130,20 @@ fi
 TARGET="${ARGS[0]:?Usage: ./install.sh /path/to/project [--with-docs] | --global [--with-docs]}"
 [[ -d "$TARGET" ]] || { echo "✖ '$TARGET' is not a directory"; exit 1; }
 
-mkdir -p "$TARGET/.claude/agents" "$TARGET/.claude/commands/taa" "$TARGET/.claude/skills" "$TARGET/templates/taa" "$TARGET/bin"
+mkdir -p "$TARGET/.claude/agents" "$TARGET/.claude/commands/taa" "$TARGET/.claude/skills" "$TARGET/templates/taa" "$TARGET/templates/qa-kit" "$TARGET/bin"
 cp "$SRC/.claude/agents/"taa-*.md      "$TARGET/.claude/agents/"
+cp "$SRC/.claude/agents/"{api-test-engineer,e2e-engineer,perf-engineer,test-strategist,test-triager}.md "$TARGET/.claude/agents/"
 cp "$SRC/.claude/commands/taa/"*.md    "$TARGET/.claude/commands/taa/"
 cp -R "$SRC/.claude/skills/."          "$TARGET/.claude/skills/"
 cp "$SRC/templates/taa/"*.md           "$TARGET/templates/taa/"
+cp -R "$SRC/templates/qa-kit/."        "$TARGET/templates/qa-kit/"
 cp "$SRC/templates/bin/taa"            "$TARGET/bin/taa" && chmod +x "$TARGET/bin/taa"
 cp "$SRC/templates/bin/taa.ps1"        "$TARGET/bin/taa.ps1"
 cp "$SRC/templates/bin/taa.cmd"        "$TARGET/bin/taa.cmd"
 mkdir -p "$TARGET/templates/brain" "$TARGET/scripts" "$TARGET/hooks"
 cp -r "$SRC/templates/brain/." "$TARGET/templates/brain/"
 cp "$SRC/scripts/"taa-guard*.sh "$TARGET/scripts/" && chmod +x "$TARGET/scripts/"taa-guard*.sh
+cp "$SRC/scripts/taa-check-backlog.sh" "$TARGET/scripts/" && chmod +x "$TARGET/scripts/taa-check-backlog.sh"
 cp "$SRC/hooks/settings.example.json" "$TARGET/hooks/"
 cp "$SRC/scripts/install-precommit.sh" "$TARGET/scripts/" && chmod +x "$TARGET/scripts/install-precommit.sh"
 [[ -f "$TARGET/.mcp.json" ]] || cp "$SRC/.mcp.json.example" "$TARGET/.mcp.json.example"

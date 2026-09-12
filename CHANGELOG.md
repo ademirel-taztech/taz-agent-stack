@@ -9,6 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+**Marketing track now auto-pairs social copy with a visual:**
+- `marketing.md` § 1a (new): after `social` writes Instagram/LinkedIn copy,
+  the orchestrator automatically invokes the `design` skill (Claude Design
+  canvas) to produce a brand-consistent visual — grounded in `DESIGN.md`'s
+  palette/typography when available, no API key or extra setup required.
+  Mandatory for Instagram and LinkedIn carousels/quote graphics; asked once
+  for plain-text LinkedIn/Twitter posts. Honest limit stated: it produces
+  typography-driven brand graphics, not photorealistic/lifestyle images —
+  those still route to the (unwired, API-key-requiring) `image` skill on
+  explicit request only.
+- `.taa/marketing/` draft files gain a `## Görsel` section (Artifact URL +
+  visual brief) when a visual was produced.
+
+**Backlog as executable prompts + a mechanical pre-DREAM completion gate:**
+- `backlog.template.md`: every task now carries a `Status`
+  (`TODO|IN_PROGRESS|BLOCKED: reason|DONE`) and a `Prompt` — one imperative,
+  self-contained instruction PO writes so DEV (or another subagent) can
+  execute the task without re-reading the whole run.
+- `taa-po` must fill both fields; `taa-dev` may only set `Status: DONE` once
+  the DoD is actually met and tests pass — a stalled task is `BLOCKED:
+  <reason>`, never silently marked done.
+- `scripts/taa-check-backlog.sh` (new, portable — bash 3.2/BSD awk safe): a
+  deterministic pre-DREAM gate that fails the run if any backlog item isn't
+  `DONE`, or if a code `TODO`/`FIXME` still cites a `TAA-###` id the backlog
+  claims is `DONE`. Wired into `start.md` § Completion (blocks DREAM/archive
+  until clean or the user explicitly descopes) and into `taa-security`'s
+  audit checklist (same check, reported as a finding).
+- `state.template.md`: stage board gained a `Started at` column alongside
+  `Approved at`, for spotting which stage is eating the run's time budget.
+
+**Pipeline speed guidance:**
+- `start.md` § 0.4: `Chief: light` and skipping PM are now actively
+  suggested (not just available) for small-to-medium, internal-facing work —
+  these plus the existing opt-in DES+ARCH parallelization (§ 1a) are the
+  biggest no-risk time savers for a mid-size run. No gate behavior changed:
+  every stage still stops and asks regardless of the Chief flag.
+
+**QA-kit test-engineering track (standalone, outside the pipeline gates):**
+- 4 skills: `test-discovery` → `test-plan` (approval) → `test-automate` → `test-run`.
+- 5 subagents: `test-strategist` (risk-based strategy, no code), `e2e-engineer`
+  (Playwright UI/E2E/smoke/a11y), `api-test-engineer` (API/contract/authz),
+  `perf-engineer` (k6 load/stress/soak + Lighthouse), `test-triager` (root-causes
+  a red test: app bug vs test bug vs flaky vs env).
+- `templates/qa-kit/` — scenario/test-plan templates plus Playwright/k6/
+  docker-compose/GitHub Actions examples.
+- `CLAUDE.md` § QA / Test Kuralları — invariant test rules (no prod runs, no
+  `waitForTimeout`/sleep, no threshold-less load tests, no loosening assertions
+  to force green) shipped to every project via `install.sh` / the plugin.
+
 **Code comprehension track:**
 - `taa-explainer` agent (16th role) — explains how existing code works: traces one
   execution path end to end across layers (entrypoint → application → domain →

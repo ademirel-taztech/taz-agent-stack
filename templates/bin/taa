@@ -3,49 +3,152 @@
 CONFIG_DIR="$HOME/.taa"
 CONFIG_FILE="$CONFIG_DIR/config.json"
 PROXY_PORT=4000
+DEFAULT_CTX=65536
 
-# Bağımlılık Kontrolleri
+# --- Bağımlılık Kontrolleri ---
 if ! command -v jq &> /dev/null; then
-    echo "❌ Hata: 'jq' kütüphanesi bulunamadı. (brew install jq)"
+    echo "❌ Hata: 'jq' bulunamadı. (brew install jq)"
     exit 1
 fi
 
 if ! command -v litellm &> /dev/null; then
-    echo "❌ Hata: 'litellm' komutu bulunamadı. (pip install 'litellm[proxy]')"
+    echo "❌ Hata: 'litellm' bulunamadı. (pip install 'litellm[proxy]')"
     exit 1
 fi
 
 init_config() {
-    if [ ! -d "$CONFIG_DIR" ]; then mkdir -p "$CONFIG_DIR"; fi
-    if [ ! -f "$CONFIG_FILE" ]; then echo '{"suppliers":{}}' > "$CONFIG_FILE"; fi
+    [ -d "$CONFIG_DIR" ] || mkdir -p "$CONFIG_DIR"
+    [ -f "$CONFIG_FILE" ] || echo '{"suppliers":{}}' > "$CONFIG_FILE"
 }
 init_config
 
 usage() {
-    echo "Taz Architectural Agent (taa)"
-    echo ""
-    echo "Kullanım:"
-    echo "  taa launch <claude|codex> --supplier <isim> --model <model_adı>"
-    echo "  taa list"
-    echo "  taa config add --supplier <isim> --api <url> [--apikey <key>]"
-    echo "  taa config update --supplier <isim> [--api <url>] [--apikey <key>]"
-    echo "  taa config delete --supplier <isim>"
+    cat <<'USAGE'
+Taz Architectural Agent (taa)
+
+Kullanım:
+  taa launch claude --supplier <isim> --model <model> [seçenekler]
+  taa launch codex  --supplier <isim> --model <model>
+  taa tune                          # Ollama.app için launchctl env ayarları
+  taa doctor                        # Teşhis: ollama durumu, env, bellek, proxy logu
+  taa list
+  taa config add    --supplier <isim> --api <url> [--apikey <key>]
+  taa config update --supplier <isim> [--api <url>] [--apikey <key>]
+  taa config delete --supplier <isim>
+
+launch seçenekleri:
+  --small <model>   Haiku katmanı ve subagent'lar için küçük model (ayrı runner,
+                    MLX serileştirmesine takılmaz). Ollama'da 2 model yüklü kalır.
+  --ctx N           num_ctx değeri (varsayılan 65536). Claude Code'un
+                    CLAUDE_CODE_MAX_CONTEXT_TOKENS değeri de buna eşitlenir,
+                    böylece auto-compact doğru noktada tetiklenir.
+  --resume <id>     Belirtilen oturumu devam ettir.
+  --continue        Son oturumu devam ettir.
+  --auto            Auto-approve modunu açık bırakır. Varsayılan KAPALI, çünkü
+                    auto mode her araç çağrısı için ikinci bir model isteği atar
+                    ve Ollama'nın MLX runner'ı istekleri seri işler.
+USAGE
     exit 1
+}
+
+# ---------------------------------------------------------------------------
+# tune: Ollama.app menü çubuğu uygulaması olarak çalıştığı için launchd
+# ~/.zshrc'yi okumaz. Değişkenler launchctl ile set edilip app yeniden
+# başlatılmalı.
+# ---------------------------------------------------------------------------
+do_tune() {
+    echo "🔧 Ollama için launchctl ortam değişkenleri ayarlanıyor..."
+
+    # "-1" değeri launchctl tarafından bayrak sanılabildiği için 24h kullanıyoruz.
+    launchctl setenv OLLAMA_KEEP_ALIVE        "24h"
+    launchctl setenv OLLAMA_CONTEXT_LENGTH    "$DEFAULT_CTX"
+    launchctl setenv OLLAMA_MAX_LOADED_MODELS "2"
+    launchctl setenv OLLAMA_LOAD_TIMEOUT      "10m"
+    launchctl setenv OLLAMA_MAX_QUEUE         "512"
+
+    echo "   OLLAMA_KEEP_ALIVE        = 24h"
+    echo "   OLLAMA_CONTEXT_LENGTH    = $DEFAULT_CTX"
+    echo "   OLLAMA_MAX_LOADED_MODELS = 2"
+    echo "   OLLAMA_LOAD_TIMEOUT      = 10m"
+    echo "   OLLAMA_MAX_QUEUE         = 512"
+    echo ""
+    echo "ℹ️  OLLAMA_NUM_PARALLEL bilerek set edilmedi: MLX runner istekleri"
+    echo "   her hâlükârda seri işliyor, bu değişken o yolda etkisiz."
+    echo "ℹ️  100 GB üzeri tek model çalıştıracaksanız MAX_LOADED_MODELS=1 yapın."
+    echo ""
+
+    read -r -p "Ollama.app şimdi yeniden başlatılsın mı? [e/H] " ans
+    case "$ans" in
+        e|E|y|Y)
+            osascript -e 'quit app "Ollama"' >/dev/null 2>&1
+            sleep 3
+            open -a Ollama
+            sleep 3
+            echo "✅ Ollama yeniden başlatıldı."
+            echo "   Doğrulama: ollama ps  →  UNTIL sütunu uzak bir zaman göstermeli."
+            ;;
+        *)
+            echo "⚠️  Değişkenler Ollama yeniden başlatılana kadar geçerli olmaz."
+            echo "   Menü çubuğundan Quit → tekrar aç."
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# doctor: hızlı teşhis
+# ---------------------------------------------------------------------------
+do_doctor() {
+    echo "═══ Ollama süreci ═══"
+    pgrep -fl "ollama serve" || echo "  (çalışmıyor)"
+    echo ""
+
+    echo "═══ launchctl değişkenleri ═══"
+    for v in OLLAMA_KEEP_ALIVE OLLAMA_CONTEXT_LENGTH OLLAMA_MAX_LOADED_MODELS \
+             OLLAMA_LOAD_TIMEOUT OLLAMA_MAX_QUEUE; do
+        printf "  %-26s = %s\n" "$v" "$(launchctl getenv $v || echo '(set edilmemiş)')"
+    done
+    echo ""
+
+    echo "═══ Yüklü modeller ═══"
+    ollama ps 2>/dev/null || echo "  (ollama'ya ulaşılamadı)"
+    echo ""
+
+    echo "═══ Bellek (anlık) ═══"
+    sysctl -n vm.swapusage
+    COMP_PAGES=$(vm_stat | awk '/occupied by compressor/{gsub(/\./,"",$5); print $5}')
+    echo "  compressor: $(( COMP_PAGES * 16384 / 1073741824 )) GB"
+    echo "  wired_limit_mb: $(sysctl -n iogpu.wired_limit_mb) (0 = sistem varsayılanı)"
+    echo ""
+
+    echo "═══ LiteLLM son log ═══"
+    if [ -f /tmp/litellm.log ]; then tail -n 20 /tmp/litellm.log; else echo "  (log yok)"; fi
 }
 
 COMMAND="$1"
 
 case "$COMMAND" in
+    tune)   do_tune;   exit 0 ;;
+    doctor) do_doctor; exit 0 ;;
+
     launch)
         AGENT_TYPE="$2"
         shift 2
         SUPPLIER=""
         MODEL=""
+        SMALL_MODEL=""
+        CTX="$DEFAULT_CTX"
+        AUTO_MODE=0
+        RESUME_ID=""
 
         while [[ $# -gt 0 ]]; do
           case $1 in
-            --supplier) SUPPLIER="$2"; shift 2 ;;
-            --model) MODEL="$2"; shift 2 ;;
+            --supplier) SUPPLIER="$2";      shift 2 ;;
+            --model)    MODEL="$2";         shift 2 ;;
+            --small)    SMALL_MODEL="$2";   shift 2 ;;
+            --ctx)      CTX="$2";           shift 2 ;;
+            --resume)   RESUME_ID="$2";     shift 2 ;;
+            --continue) RESUME_ID="last";   shift ;;
+            --auto)     AUTO_MODE=1;        shift ;;
             *) shift ;;
           esac
         done
@@ -56,35 +159,36 @@ case "$COMMAND" in
         API_KEY=$(jq -r ".suppliers[\"$SUPPLIER\"].api_key // empty" "$CONFIG_FILE")
 
         if [ -z "$API_BASE" ]; then
-            echo "❌ Hata: '$SUPPLIER' adında bir sağlayıcı config'de tanımlı değil!"
+            echo "❌ Hata: '$SUPPLIER' adında bir sağlayıcı tanımlı değil!"
             exit 1
         fi
 
         [ -z "$API_KEY" ] && API_KEY="dummy-key"
 
-        # Endpoint temizleme
-        CLEAN_API_BASE=$(echo "$API_BASE" | sed -E 's|\/chat\/completions\/*||' | sed -E 's|\/*$||')
+        CLEAN_API_BASE=$(echo "$API_BASE" | sed -E 's|/chat/completions/*||' | sed -E 's|/*$||')
 
         echo "🚀 [$SUPPLIER] sağlayıcısına bağlanılıyor..."
         echo "📍 Endpoint: $CLEAN_API_BASE"
         echo "🧠 Model: $MODEL"
+        [ -n "$SMALL_MODEL" ] && echo "🪶 Küçük model: $SMALL_MODEL"
+        echo "📏 Context: $CTX"
+        [ -n "$RESUME_ID" ] && echo "⏪ Resume: $RESUME_ID"
 
         if [ "$AGENT_TYPE" == "claude" ]; then
-            echo "🔄 LiteLLM Proxy hazırlanıyor (Port: $PROXY_PORT)..."
 
-            # Provider Tespiti
+            # --- Provider tespiti ---
+            IS_OLLAMA=0
             LITELLM_MODEL="$MODEL"
             if [[ "$CLEAN_API_BASE" == *"openrouter.ai"* ]]; then
                 LITELLM_MODEL="openrouter/$MODEL"
             elif [[ "$CLEAN_API_BASE" == *"11434"* ]] || [ "$SUPPLIER" == "ollama" ]; then
+                IS_OLLAMA=1
                 LITELLM_MODEL="ollama_chat/$MODEL"
-                CLEAN_API_BASE=$(echo "$CLEAN_API_BASE" | sed -E 's|\/v1\/*$||')
+                CLEAN_API_BASE=$(echo "$CLEAN_API_BASE" | sed -E 's|/v1/*$||')
             elif [[ "$CLEAN_API_BASE" == *"nvidia.com"* ]] || [ "$SUPPLIER" == "nvidia" ]; then
-                # NVIDIA NIM için LiteLLM'in yerel provider prefix'i kullanılır
                 LITELLM_MODEL="nvidia_nim/$MODEL"
                 CLEAN_API_BASE="https://integrate.api.nvidia.com/v1"
             elif [[ "$CLEAN_API_BASE" == *"deepseek.com"* ]] || [ "$SUPPLIER" == "deepseek" ]; then
-                # DeepSeek /v1 takısı kullanmaz
                 LITELLM_MODEL="deepseek/$MODEL"
                 CLEAN_API_BASE="https://api.deepseek.com"
             else
@@ -93,10 +197,36 @@ case "$COMMAND" in
                     CLEAN_API_BASE="${CLEAN_API_BASE}/v1"
                 fi
             fi
-            # Dynamic LiteLLM YAML Config
-            # Hem $MODEL hem de $LITELLM_MODEL alias olarak eklenir.
+
+            # Ollama ise erişilebilirlik ve model varlığı kontrolü
+            if [ $IS_OLLAMA -eq 1 ]; then
+                if ! curl -s --max-time 5 "$CLEAN_API_BASE/api/tags" >/dev/null 2>&1; then
+                    echo "❌ Hata: Ollama'ya ulaşılamıyor ($CLEAN_API_BASE)"
+                    exit 1
+                fi
+                if ! ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$MODEL"; then
+                    echo "⚠️  Uyarı: '$MODEL' ollama list çıktısında görünmüyor."
+                fi
+            fi
+
+            # Küçük model için provider prefix'i (ana modelle aynı sağlayıcı varsayımı)
+            if [ -n "$SMALL_MODEL" ]; then
+                SMALL_LITELLM_MODEL="${LITELLM_MODEL%/*}/$SMALL_MODEL"
+            fi
+
+            echo "🔄 LiteLLM Proxy hazırlanıyor (Port: $PROXY_PORT)..."
+
             TMP_YAML="/tmp/litellm_runtime_config.yaml"
-            cat <<EOF > "$TMP_YAML"
+
+            # Ollama'ya num_ctx / keep_alive geçir. Diğer sağlayıcılarda anlamsız.
+            EXTRA_PARAMS=""
+            if [ $IS_OLLAMA -eq 1 ]; then
+                EXTRA_PARAMS="      num_ctx: $CTX
+      keep_alive: \"24h\""
+            fi
+
+            {
+            cat <<EOF
 model_list:
   - model_name: "$MODEL"
     litellm_params:
@@ -104,6 +234,7 @@ model_list:
       api_base: "$CLEAN_API_BASE"
       api_key: "$API_KEY"
       drop_params: true
+$EXTRA_PARAMS
     model_info:
       id: "$MODEL"
       mode: "chat"
@@ -113,26 +244,51 @@ model_list:
       api_base: "$CLEAN_API_BASE"
       api_key: "$API_KEY"
       drop_params: true
+$EXTRA_PARAMS
+EOF
+
+            if [ -n "$SMALL_MODEL" ]; then
+            cat <<EOF
+  - model_name: "$SMALL_MODEL"
+    litellm_params:
+      model: "$SMALL_LITELLM_MODEL"
+      api_base: "$CLEAN_API_BASE"
+      api_key: "$API_KEY"
+      drop_params: true
+$EXTRA_PARAMS
+    model_info:
+      id: "$SMALL_MODEL"
+      mode: "chat"
+EOF
+            fi
+
+            cat <<EOF
 litellm_settings:
   drop_params: true
   set_verbose: false
+  request_timeout: 900
+  num_retries: 1
 EOF
+            } > "$TMP_YAML"
 
             # Eski süreci temizle
             lsof -ti:$PROXY_PORT | xargs kill -9 > /dev/null 2>&1
 
-            # Proxy'yi çalıştır
             litellm --config "$TMP_YAML" --port $PROXY_PORT > /tmp/litellm.log 2>&1 &
-            
             PROXY_PID=$!
-            cleanup() { if [ -n "$PROXY_PID" ]; then kill $PROXY_PID > /dev/null 2>&1; fi; }
+
+            cleanup() {
+                [ -n "$PROXY_PID" ] && kill "$PROXY_PID" >/dev/null 2>&1
+                sleep 1
+                lsof -ti:$PROXY_PORT | xargs kill -9 >/dev/null 2>&1
+            }
             trap cleanup EXIT INT TERM
 
-            # Port Dinleme Kontrolü
             READY=0
-            for i in {1..12}; do
+            for i in {1..30}; do
                 if ! kill -0 $PROXY_PID 2>/dev/null; then break; fi
-                if lsof -i:$PROXY_PORT >/dev/null 2>&1 || curl -s "http://127.0.0.1:$PROXY_PORT/health" >/dev/null 2>&1; then
+                if curl -sf --max-time 2 \
+                     "http://127.0.0.1:$PROXY_PORT/health/liveliness" >/dev/null 2>&1; then
                     READY=1
                     break
                 fi
@@ -141,29 +297,64 @@ EOF
 
             if [ $READY -eq 0 ]; then
                 echo "❌ Hata: LiteLLM Proxy başlatılamadı!"
-                echo "📄 Hata Logu (/tmp/litellm.log):"
+                echo "📄 /tmp/litellm.log son satırlar:"
                 echo "----------------------------------------"
-                cat /tmp/litellm.log | tail -n 15
+                tail -n 20 /tmp/litellm.log
                 echo "----------------------------------------"
                 exit 1
             fi
 
+            # --- Claude Code argümanları ---
+            CLAUDE_ARGS=()
+
+            if [ $AUTO_MODE -eq 0 ]; then
+                # Bayrak bu sürümde destekleniyorsa geçir, yoksa sessizce atla.
+                if claude --help 2>&1 | grep -q -- '--permission-mode'; then
+                    CLAUDE_ARGS+=(--permission-mode default)
+                else
+                    echo "⚠️  --permission-mode bu sürümde yok."
+                    echo "   ~/.claude/settings.json içine \"defaultMode\": \"default\" ekleyin,"
+                    echo "   veya oturum içinde Shift+Tab ile auto mode'dan çıkın."
+                fi
+            fi
+
+            if [ "$RESUME_ID" == "last" ]; then
+                CLAUDE_ARGS+=(--continue)
+            elif [ -n "$RESUME_ID" ]; then
+                CLAUDE_ARGS+=(--resume "$RESUME_ID")
+            fi
+
+            # Haiku katmanı ve subagent'lar: küçük model varsa oraya, yoksa ana modele.
+            HAIKU_TARGET="${SMALL_MODEL:-$MODEL}"
+
             echo "⚡ Claude Code başlatılıyor..."
-            
-            # Claude Code'a model ismini alias üzerinden de tanıtabilmek için ANTHROPIC_MODEL atanır
+
             ANTHROPIC_BASE_URL="http://127.0.0.1:$PROXY_PORT" \
             ANTHROPIC_API_KEY="sk-dummy" \
+            ANTHROPIC_AUTH_TOKEN="sk-dummy" \
             ANTHROPIC_MODEL="$MODEL" \
-            CLAUDE_AUTO_TRIM_CONTEXT="true" \
-            MAX_CONTEXT_TOKENS="131072" \
-            claude
+            ANTHROPIC_DEFAULT_OPUS_MODEL="$MODEL" \
+            ANTHROPIC_DEFAULT_SONNET_MODEL="$MODEL" \
+            ANTHROPIC_DEFAULT_HAIKU_MODEL="$HAIKU_TARGET" \
+            CLAUDE_CODE_SUBAGENT_MODEL="$HAIKU_TARGET" \
+            CLAUDE_CODE_MAX_CONTEXT_TOKENS="$CTX" \
+            CLAUDE_CODE_MAX_OUTPUT_TOKENS="8192" \
+            CLAUDE_CODE_ATTRIBUTION_HEADER="0" \
+            DISABLE_NON_ESSENTIAL_MODEL_CALLS="1" \
+            CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1" \
+            DISABLE_TELEMETRY="1" \
+            claude "${CLAUDE_ARGS[@]}"
 
         elif [ "$AGENT_TYPE" == "codex" ]; then
             echo "⚡ Codex başlatılıyor..."
             OPENAI_API_BASE="$CLEAN_API_BASE" \
+            OPENAI_BASE_URL="$CLEAN_API_BASE" \
             OPENAI_API_KEY="$API_KEY" \
             OPENAI_MODEL_NAME="$MODEL" \
             codex
+        else
+            echo "❌ Hata: Bilinmeyen ajan tipi '$AGENT_TYPE' (claude veya codex)"
+            exit 1
         fi
         ;;
 
@@ -179,8 +370,8 @@ EOF
         while [[ $# -gt 0 ]]; do
           case $1 in
             --supplier) SUPPLIER="$2"; shift 2 ;;
-            --api) API_URL="$2"; shift 2 ;;
-            --apikey) API_KEY="$2"; shift 2 ;;
+            --api)      API_URL="$2";  shift 2 ;;
+            --apikey)   API_KEY="$2";  shift 2 ;;
             *) shift ;;
           esac
         done
@@ -192,24 +383,31 @@ EOF
                 [ -z "$API_URL" ] && { echo "❌ Hata: --api URL zorunludur."; exit 1; }
                 TMP_FILE=$(mktemp)
                 jq --arg sup "$SUPPLIER" --arg api "$API_URL" --arg key "$API_KEY" \
-                   '.suppliers[$sup] = {"api_base": $api, "api_key": $key}' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
+                   '.suppliers[$sup] = {"api_base": $api, "api_key": $key}' "$CONFIG_FILE" > "$TMP_FILE" \
+                   && mv "$TMP_FILE" "$CONFIG_FILE"
                 echo "✅ '$SUPPLIER' başarıyla eklendi."
                 ;;
             update)
                 TMP_FILE=$(mktemp)
                 if [ -n "$API_URL" ] && [ -n "$API_KEY" ]; then
-                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" --arg key "$API_KEY" '.suppliers[$sup].api_base = $api | .suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
+                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" --arg key "$API_KEY" \
+                       '.suppliers[$sup].api_base = $api | .suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
                 elif [ -n "$API_URL" ]; then
-                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" '.suppliers[$sup].api_base = $api' "$CONFIG_FILE" > "$TMP_FILE"
+                    jq --arg sup "$SUPPLIER" --arg api "$API_URL" \
+                       '.suppliers[$sup].api_base = $api' "$CONFIG_FILE" > "$TMP_FILE"
                 elif [ -n "$API_KEY" ]; then
-                    jq --arg sup "$SUPPLIER" --arg key "$API_KEY" '.suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
+                    jq --arg sup "$SUPPLIER" --arg key "$API_KEY" \
+                       '.suppliers[$sup].api_key = $key' "$CONFIG_FILE" > "$TMP_FILE"
+                else
+                    echo "❌ Hata: --api veya --apikey verilmeli."; rm -f "$TMP_FILE"; exit 1
                 fi
                 mv "$TMP_FILE" "$CONFIG_FILE"
                 echo "✅ '$SUPPLIER' güncellendi."
                 ;;
             delete)
                 TMP_FILE=$(mktemp)
-                jq --arg sup "$SUPPLIER" 'del(.suppliers[$sup])' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
+                jq --arg sup "$SUPPLIER" 'del(.suppliers[$sup])' "$CONFIG_FILE" > "$TMP_FILE" \
+                   && mv "$TMP_FILE" "$CONFIG_FILE"
                 echo "🗑️  '$SUPPLIER' silindi."
                 ;;
             *) usage ;;

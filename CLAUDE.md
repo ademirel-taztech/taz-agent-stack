@@ -78,3 +78,46 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:marketing <talep>` — marketing track: routes to the bundled marketing skills
   (social, blog, video, launch, SEO, pricing…), grounded in `.taa/` artifacts;
   drafts land in `.taa/marketing/`, publishing is always the human's action
+
+## QA / Test Kuralları
+
+### Çalışma akışı
+Test işleri her zaman şu sırayla ilerler; aşama atlanmaz:
+`test-discovery` → `test-plan` (kullanıcı onayı) → `test-automate` → `test-run`
+
+Senaryolar onaylanmadan otomasyon kodu yazılmaz.
+
+### Komutlar
+| İş | Komut |
+|---|---|
+| Ortamı kaldır | `docker compose -f docker-compose.test.yml up -d --build --wait` |
+| Ortamı sıfırla | `docker compose -f docker-compose.test.yml down -v` |
+| Unit | `npm run test:unit` |
+| API | `npx playwright test --project=api` |
+| Smoke | `npx playwright test --project=smoke` |
+| Tam E2E | `npx playwright test` |
+| Trace incele | `npx playwright show-trace <trace.zip>` |
+| Yük | `SCENARIO=load k6 run tests/load/k6-load.js` |
+
+### Değişmez kurallar
+1. **Production'a test koşulmaz.** BASE_URL production'a benziyorsa dur ve sor.
+2. **Yük testi yalnızca izole ortamda** çalışır; hedef env değişkeninden gelir.
+3. Test adı TC ID ile başlar: `test('TC-E2E-014 | ...')`.
+4. `waitForTimeout` ve sabit `sleep` kullanılmaz; web-first assertion kullanılır.
+5. Locator önceliği: `getByRole` > `getByLabel` > `getByTestId`. Kırılgan CSS/XPath yasak.
+6. Testler birbirinden bağımsızdır; her test kendi verisini kurar ve temizler.
+7. Kırmızı testi geçirmek için assertion gevşetilmez, retry artırılmaz. Kök neden bulunur.
+8. Uygulama kodunda bulunan bug **düzeltilmez**, raporlanır. Düzeltme için ayrı onay gerekir.
+9. Performans/yük senaryosu eşik (threshold) olmadan yazılmaz. Eşik yoksa kullanıcıya sorulur.
+10. Yazılan her test teslim edilmeden önce çalıştırılır.
+
+### Dosya düzeni
+```
+docs/qa/            senaryolar, plan, raporlar (kod yok)
+tests/e2e/          Playwright UI ve E2E
+tests/api/          API ve entegrasyon
+tests/contract/     OpenAPI şema doğrulama
+tests/load/         k6 script'leri
+tests/fixtures/     seed, wiremock stub'ları
+reports/            koşum çıktıları (git'e girmez)
+```
