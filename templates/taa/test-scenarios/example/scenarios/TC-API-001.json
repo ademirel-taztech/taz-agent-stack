@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "test_id": "TC-API-001",
+  "test_name": "Giriş endpoint'i hatalı kimlikte 401 döner ve hassas alan sızdırmaz",
+  "level": "hard",
+  "layer": "API",
+  "priority": "P1",
+  "page": { "name": "Giriş", "route": "/login", "source": "apps/web/src/app/(auth)/login/page.tsx:1" },
+  "target_url": "{{API_BASE_URL}}/api/auth/login",
+  "preconditions": {
+    "auth": { "mode": "anonymous" },
+    "seed": ["Aktif durumda kullanıcı (TEST_USER_EMAIL) mevcut"]
+  },
+  "test_data": {
+    "email": "{{env.TEST_USER_EMAIL}}",
+    "invalid_password": "Yanlis!Sifre42"
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "channel": "api",
+      "description": "Hatalı şifreyle doğrudan API çağrısı",
+      "laya_question": "Sunucu isteği yetkisiz (401) olarak reddetti mi?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true },
+      "human_hint": "Postman/curl ile POST {{API_BASE_URL}}/api/auth/login gövdesi {email, password} gönderin; durum kodu 401, gövdede token veya passwordHash olmamalı.",
+      "automation": {
+        "actions": [
+          {
+            "action": "api_call",
+            "request": {
+              "method": "POST",
+              "path": "/api/auth/login",
+              "auth": "none",
+              "body": { "email": "{{test_data.email}}", "password": "{{test_data.invalid_password}}" }
+            },
+            "expect": {
+              "status": 401,
+              "body_not_contains_keys": ["accessToken", "refreshToken", "passwordHash"],
+              "max_ms": 800
+            }
+          }
+        ],
+        "assertions": []
+      }
+    },
+    {
+      "step_id": 2,
+      "channel": "api",
+      "description": "Eksik alanla çağrıda doğrulama hatası",
+      "laya_question": "Sunucu eksik şifre alanı için doğrulama hatası (400) döndü mü?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true },
+      "automation": {
+        "actions": [
+          {
+            "action": "api_call",
+            "request": { "method": "POST", "path": "/api/auth/login", "auth": "none", "body": { "email": "{{test_data.email}}" } },
+            "expect": { "status": 400, "body_has_keys": ["errors"] }
+          }
+        ],
+        "assertions": []
+      }
+    }
+  ],
+  "traceability": {
+    "endpoints": ["POST /api/auth/login"],
+    "sources": ["src/Api/Controllers/AuthController.cs:1"]
+  },
+  "verification": "code-only",
+  "tags": ["auth", "api", "negative"]
+}

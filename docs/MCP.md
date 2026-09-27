@@ -8,7 +8,7 @@ Principle: **an MCP earns its place by curing a specific role's specific blindne
 |---|---|---|
 | **GitHub** (or Azure DevOps) | PO, DEV, SEC, DREAM | backlog ⇄ real issues/work items; branches & PRs; SEC findings as PR review comments; run summary → PR description |
 | **PostgreSQL** (read-only role) | ARCH, QA-B | real schema/indexes instead of guessing from EF models; migration verification |
-| **Playwright** | QA-B, WRITER, DES, PM | live E2E of acceptance criteria; real screenshots for manuals; mockup-vs-implementation diff; observing competitors' public flows |
+| **Playwright** | QA-B, TESTER, WRITER, DES, PM | live E2E of acceptance criteria; TESTER verifies scenario locators read-only and executes scenario sets (`taa-tester` is the one agent that lists the `mcp__playwright__browser_*` tools explicitly); real screenshots for manuals; mockup-vs-implementation diff; observing competitors' public flows |
 
 Tier 2/3 (enable when mature): **Sentry** (production errors feed brain evidence and `findings/CHECKLIST.md` — the "signal arrives → brain grows" loop), **Context7** (current library docs for ARCH/DEV), **Figma** (DES pulls real tokens), **gbrain** (brain scale backend), **Slack/Teams** (gate *notifications* only).
 

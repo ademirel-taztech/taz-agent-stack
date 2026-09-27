@@ -82,6 +82,7 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
 - `/taa:refactor <target>` — behavior-preserving refactor: characterization tests, then the refactor, then a SEC diff audit; uses `.taa/invariants.md` instead of SPEC.md
 - `/taa:upgrade <package|framework>` — ARCH-led version migration: breaking-change research, staged plan, staged implementation
 - `/taa:onboard [focus]` — synthesizes a cited onboarding doc from the brain + `.taa/` + architecture.md
+- `/taa:writetest [light|normal|hard] <target>` — test-scenario track: spawn `taa_tester` (mode WRITE) to write level-graded, human/Laya/headless-executable scenarios into `<run-dir>/test-scenarios/` per `templates/taa/test-scenarios/SCHEMA.md`, validate with `python3 scripts/taa-scenarios.py render <dir>`, then stop at one gate. In the pipeline: QA-A writes (Chief full → hard, light → normal), QA-B runs (mode RUN) when a local/staging URL exists — headless via `runner/` (`BASE_URL=… TAA_SCENARIOS=… npm run scenarios`, Playwright + Laya judge in shadow mode), else a browser tool
 - `/taa:explain <target>` — code comprehension: spawn `taa_explainer` to trace one execution path end to end (entrypoint → application → domain → infrastructure), `file:line` at every hop; `map:`/`impact:` variants. Read-only on source, no gate, never fixes
 - Doc ingest/export (no skill mechanism in Codex — no `/taa:ingest`/`/taa:report`
   slash commands either): say "Ingest <file> per `.claude/skills/doc-ingest/SKILL.md`"

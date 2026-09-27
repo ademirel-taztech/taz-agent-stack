@@ -2,13 +2,16 @@
 
 - **Run ID:** {uuid or ISO-timestamp-slug, e.g. 2026-07-18-1423-licensing}
 - **Run directory:** `.taa/runs/{run-id}/` — every artifact this run produces lives here
-- **Track:** {CODE|FIX|DOCS|MARKETING|REFACTOR|RELEASE|UPGRADE|INCIDENT}
+- **Track:** {CODE|FIX|DOCS|MARKETING|REFACTOR|RELEASE|UPGRADE|INCIDENT|TESTSCENARIO}
 - **Request:** {original user request}
 - **Started:** {ISO timestamp}
 - **Base commit:** {git HEAD at start}
 - **Chief:** {full|light} — full = CHIEF briefs every gate (default); light = CHIEF
   only briefs before the SEC gate and the DREAM/completion summary (asked once at
   Stage 0 for simple/internal features, see docs/PIPELINE.md § CHIEF opt-out)
+- **Test level:** {light|normal|hard} — test-scenario depth (`taa-tester`). CODE track:
+  derived from Chief (full → hard, light → normal); TESTSCENARIO track: from
+  `/taa:writetest`'s argument (default normal)
 - **Current stage:** BRAIN
 
 <!-- Multiple stages may be `🔄 in-progress` at once (see start.md §1a, e.g.
@@ -35,11 +38,11 @@ gate condition itself. -->
 | PO    | ⏳ pending | | | |
 | DES   | ⏳ pending | | | may run parallel with ARCH (opt-in) |
 | ARCH  | ⏳ pending | | | may run parallel with DES (opt-in) |
-| QA-A  | ⏳ pending | | | |
+| QA-A  | ⏳ pending | | | + taa-tester WRITE → test-scenarios/ |
 | DEV   | ⏳ pending | | | |
 | OPS   | ⏳ pending | | | Dockerfile/CI/migration+rollback/runbook |
 | SEC   | ⏳ pending | | | + COMPLIANCE if SPEC has personal data |
-| QA-B  | ⏳ pending | | | |
+| QA-B  | ⏳ pending | | | taa-tester RUN (if MCP + local/staging URL) → results/ |
 | DREAM | ⏳ pending | | | consolidation; blocked until backlog has zero TODO/IN_PROGRESS/BLOCKED items (see start.md § Completion) |
 
 ## Decision log

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "run_id": "2026-09-27-0930-login-example",
+  "generated_at": "2026-09-27T09:30:00Z",
+  "level": "hard",
+  "target": "/login",
+  "verification": "code-only",
+  "env": {
+    "required": ["BASE_URL", "API_BASE_URL", "TEST_USER_EMAIL", "TEST_USER_PASSWORD"],
+    "notes": "Değerler .env.test / CI secret'larından gelir; bu dosyada hiçbir zaman gerçek değer yazılmaz. BASE_URL production olamaz."
+  },
+  "pages": [
+    {
+      "name": "Giriş",
+      "route": "/login",
+      "source": "apps/web/src/app/(auth)/login/page.tsx:1",
+      "scenarios": ["TC-SMOKE-001", "TC-UI-001", "TC-NEG-001", "TC-API-001", "TC-A11Y-001"]
+    }
+  ],
+  "scenarios": [
+    { "test_id": "TC-SMOKE-001", "file": "scenarios/TC-SMOKE-001.json", "level": "light", "layer": "SMOKE", "priority": "P0" },
+    { "test_id": "TC-UI-001", "file": "scenarios/TC-UI-001.json", "level": "normal", "layer": "UI", "priority": "P0" },
+    { "test_id": "TC-NEG-001", "file": "scenarios/TC-NEG-001.json", "level": "normal", "layer": "NEG", "priority": "P0" },
+    { "test_id": "TC-API-001", "file": "scenarios/TC-API-001.json", "level": "hard", "layer": "API", "priority": "P1" },
+    { "test_id": "TC-A11Y-001", "file": "scenarios/TC-A11Y-001.json", "level": "hard", "layer": "A11Y", "priority": "P1" }
+  ],
+  "out_of_scope": ["Şifremi unuttum akışı — ayrı sayfa (/sifremi-unuttum), bu hedefin kapsamı dışında"]
+}

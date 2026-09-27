@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "test_id": "TC-A11Y-001",
+  "test_name": "Giriş formu yalnızca klavyeyle kullanılabilir ve WCAG AA ihlali içermez",
+  "level": "hard",
+  "layer": "A11Y",
+  "priority": "P1",
+  "page": { "name": "Giriş", "route": "/login", "source": "apps/web/src/app/(auth)/login/page.tsx:1" },
+  "target_url": "{{BASE_URL}}/login",
+  "preconditions": { "auth": { "mode": "anonymous" }, "viewport": "desktop" },
+  "steps": [
+    {
+      "step_id": 1,
+      "description": "Sayfanın açılıp otomatik erişilebilirlik taramasının yapılması",
+      "laya_question": "Metinler arka planla yeterli kontrasta sahip ve form alanlarının görünür etiketleri var mı?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true },
+      "human_hint": "Chrome DevTools > Lighthouse > Accessibility skoru en az 90 olmalı.",
+      "automation": {
+        "actions": [{ "action": "goto", "url": "{{BASE_URL}}/login" }],
+        "assertions": [{ "type": "a11y_no_violations", "impact": "serious" }]
+      }
+    },
+    {
+      "step_id": 2,
+      "description": "Tab tuşuyla e-posta alanından şifre alanına geçiş",
+      "laya_question": "Klavye odağı şu an şifre alanında ve odak çerçevesi görünür mü?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true },
+      "automation": {
+        "actions": [
+          { "action": "click", "locator": { "by": "label", "value": "E-posta" } },
+          { "action": "press", "value": "Tab" }
+        ],
+        "assertions": [{ "type": "focused", "locator": { "by": "label", "value": "Şifre" } }]
+      }
+    }
+  ],
+  "traceability": { "sources": ["apps/web/src/app/(auth)/login/page.tsx:1"] },
+  "verification": "code-only",
+  "tags": ["a11y", "wcag-aa"]
+}

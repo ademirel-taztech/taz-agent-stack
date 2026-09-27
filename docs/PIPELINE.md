@@ -7,12 +7,12 @@ flowchart TD
     U[User: /taa:start request] --> PO[taa-po\nSPEC.md + backlog.md]
     PO -->|gate: onayla| DES[taa-designer\nDESIGN.md + mockups]
     DES -->|gate| ARCH[taa-architect\narchitecture.md + ADRs]
-    ARCH -->|gate| QAA[taa-qa Phase A\nmetrics.md + test skeletons]
+    ARCH -->|gate| QAA[taa-qa Phase A + taa-tester WRITE\nmetrics.md + test skeletons + test-scenarios]
     QAA -->|gate| DEV[taa-dev\nimplementation, task by task]
     DEV --> OPS[taa-ops\nDockerfile/CI, migration+rollback, runbook]
     OPS -->|gate| SEC[taa-security + taa-compliance\nreview.md + compliance.md + docs]
     SEC -->|Critical/High findings| DEV
-    SEC -->|gate passed| QAB[taa-qa Phase B\nmetric scoreboard]
+    SEC -->|gate passed| QAB[taa-tester RUN + taa-qa Phase B\nscenario results + metric scoreboard]
     QAB -->|metric fail, max 3 loops| DEV
     QAB -->|green| GATE{taa-check-backlog.sh:\nall items DONE?}
     GATE -->|no| DEV
@@ -43,11 +43,13 @@ tenth. The layout now is:
 ```
 .taa/
   runs/<run-id>/          the ONE active run (0 or 1 at a time per worktree)
-    state.md              Track: CODE|FIX|DOCS|MARKETING|REFACTOR|RELEASE|UPGRADE|INCIDENT
+    state.md              Track: CODE|FIX|DOCS|MARKETING|REFACTOR|RELEASE|UPGRADE|INCIDENT|TESTSCENARIO
                            Chief: full|light  (see "CHIEF opt-out" below)
     RESEARCH.md, SPEC.md, backlog.md, DESIGN.md, design/, architecture.md,
     invariants.md, metrics.md, tests/, review.md, compliance.md,
     data-review.md, DOCPLAN.md, runbook-*.md, brain-briefing.md ...
+    test-scenarios/       taa-tester: index.json + scenarios/TC-*.json + generated
+                          README.md + results/ (see § Test scenarios)
     (exactly the same filenames as before — just nested one level down)
   archive/<run-id>/       completed runs, moved here at the DREAM/completion step
   archive/INDEX.md        one line per archived run — see below
@@ -61,7 +63,7 @@ tenth. The layout now is:
 **Rules:**
 - Every gated, multi-stage track (`/taa:start`, `/taa:fix`, `/taa:refactor`,
   `/taa:docs`, `/taa:marketing`, `/taa:release`, `/taa:upgrade`,
-  `/taa:incident`) creates its own `.taa/runs/<run-id>/` at stage 0 and does
+  `/taa:incident`, `/taa:writetest`) creates its own `.taa/runs/<run-id>/` at stage 0 and does
   all its reading/writing inside it. A `.taa/X.md` path named in any agent's
   instructions means `<run-dir>/X.md` — the orchestrator passes the resolved
   absolute run-dir path in every subagent task prompt, and each agent file
@@ -89,6 +91,37 @@ tenth. The layout now is:
   this flag before invoking `taa-chief` — `light` skips roughly two-thirds
   of CHIEF's subagent invocations on a simple run without dropping the one
   advisory check that matters most (the safety gate).
+
+## Test scenarios (`taa-tester`)
+
+Human-style smoke/functional scenarios that **a person, the Laya runner or a
+headless browser** can execute step by step, from the same JSON. Format
+contract: `templates/taa/test-scenarios/SCHEMA.md` (+ JSON Schemas and a
+complete `example/`).
+
+- **Levels (cumulative):** `light` = the page works (one SMOKE per page),
+  `normal` = basic functions (happy path + main negative case per form),
+  `hard` = full FE + BE (every validation/boundary/state/role, every endpoint
+  the page calls hit directly incl. 401/403/IDOR, keyboard + axe).
+- **Every step has two layers:** `laya_question` + `expected_primitive`
+  (`noul` = yes/no with Laya's p(yes) and a null band, `choice`, `score`) for
+  a human/Laya, and `automation.actions` + `assertions` that map 1:1 to
+  Playwright (`role` > `label` > `testid` locators, web-first waits only).
+- **Where it runs:** `/taa:writetest [level] <target> [--url] [--run]`
+  standalone (own `TESTSCENARIO` run, one gate), and inside `/taa:start` —
+  QA-A writes (`Chief: full` → hard, `light` → normal; locators become a
+  contract for DEV), QA-B runs it through the Playwright MCP when a
+  local/staging URL is available, without changing QA-B's own flow.
+- **Execution:** `runner/` (installed as `taa-runner/`) runs a set headless
+  with Playwright; the local Laya ONNX model (`models/laya/`, a text model fed
+  the page's accessibility tree) answers every `laya_question`. Default judge
+  mode is `shadow` — assertions decide, Laya's answers and agreement are
+  recorded — because the shipped checkpoint measured at chance level on
+  page-state yes/no questions (`models/laya/README.md`).
+- **Mechanical gate:** `scripts/taa-scenarios.py validate <dir>` (schema +
+  primitive rules, no literal hosts/credentials, env declared, execution
+  order, per-page coverage); `render <dir>` regenerates the human `README.md`.
+  Covered by `tests/scenarios/run_tests.sh` in CI.
 
 ## Design principles
 

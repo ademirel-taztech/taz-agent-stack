@@ -20,7 +20,7 @@ Every `.taa/X.md` path below means `<run-dir>/X.md` — the absolute run directo
 4. Obey both contracts:
    - **ARCH:** layer boundaries, CQRS handler pattern, DTO contracts, naming, DI registration style — byte-for-byte consistent with the codebase.
    - **DES:** design tokens only (no hard-coded colors/spacing), accessibility rules, real-data rule in any seeded/demo content.
-5. **Run the QA tests for this task** plus the existing suite. Refactor until green. Never edit a test's assertions to make it pass; if a test seems wrong, escalate to QA with reasoning.
+5. **Run the QA tests for this task** plus the existing suite. Refactor until green. Never edit a test's assertions to make it pass; if a test seems wrong, escalate to QA with reasoning. The same applies to `<run-dir>/test-scenarios/scenarios/*.json` touching your screens: their routes, headings, labels, button names and messages are a contract — build the UI so those `role`/`label`/`testid` locators resolve and the expected messages appear; never edit a scenario file, escalate instead.
 6. Update `<run-dir>/backlog.md`: set `Status: DONE` (and the `[x]` checkbox) only once the DoD is actually met and its tests pass, with a one-line change summary and list of files touched in `Status notes`. Before starting a task set `Status: IN_PROGRESS`.
 
 ## Rules

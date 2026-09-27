@@ -14,6 +14,50 @@ jobs:
       - name: Run tests/guard/run_tests.sh
         run: bash tests/guard/run_tests.sh
 
+  scenario-tests:
+    name: Test-scenario validator suite (taa-scenarios.py)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Run tests/scenarios/run_tests.sh
+        run: bash tests/scenarios/run_tests.sh
+
+  runner:
+    name: Scenario runner (typecheck, Laya judge build, self-test without the model)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install runner dependencies
+        working-directory: runner
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Typecheck
+        working-directory: runner
+        run: npm run typecheck
+      - name: Build the Laya judge (the 650 MB model itself is not in CI)
+        working-directory: runner
+        run: npm run build:judge
+      - name: Self-test — example set passes against the clean app
+        working-directory: runner
+        run: TAA_JUDGE=assertions npm run selftest -- --reporter=line
+      - name: Self-test — an injected defect must turn the run red
+        working-directory: runner
+        run: |
+          if SELFTEST_BUG=message TAA_JUDGE=assertions npm run selftest -- --reporter=line; then
+            echo "::error::runner passed an app with a wrong error message"; exit 1
+          fi
+
   shellcheck:
     name: Shellcheck all scripts
     runs-on: ubuntu-latest
@@ -25,7 +69,7 @@ jobs:
           # -P SCRIPTDIR resolves `# shellcheck source=./x.sh` directives
           # relative to each script's own directory, not the invocation cwd.
           shopt -s globstar nullglob
-          files=(scripts/*.sh install.sh tests/guard/run_tests.sh)
+          files=(scripts/*.sh install.sh tests/guard/run_tests.sh tests/scenarios/run_tests.sh)
           echo "Checking: ${files[*]}"
           shellcheck -x -P SCRIPTDIR "${files[@]}"
 

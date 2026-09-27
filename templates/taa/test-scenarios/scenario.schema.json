@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "taa/test-scenarios/scenario.schema.json",
+  "title": "TAA test scenario (Laya / human / headless browser executable)",
+  "description": "One scenario = one JSON file under <test-scenarios>/scenarios/. Every step carries two layers: a natural-language question for a human or the Laya runner (laya_question + expected_primitive + expected), and a deterministic automation block (actions + assertions) a headless browser executes 1:1. See SCHEMA.md for semantics. Primitive-specific rules (e.g. choice.expected must be one of options) are enforced by scripts/taa-scenarios.py on top of this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "test_id", "test_name", "level", "layer", "priority", "page", "target_url", "preconditions", "steps", "traceability", "verification"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "test_id": {
+      "type": "string",
+      "pattern": "^TC-(SMOKE|UI|NEG|E2E|API|SEC|A11Y)-[0-9]{3}$",
+      "description": "CLAUDE.md QA rule 3: tests start with a TC ID. The layer segment must equal `layer`."
+    },
+    "test_name": { "type": "string", "minLength": 5 },
+    "level": {
+      "enum": ["light", "normal", "hard"],
+      "description": "Lowest level this scenario belongs to. Levels are cumulative: a hard run also contains every light and normal scenario."
+    },
+    "layer": { "enum": ["SMOKE", "UI", "NEG", "E2E", "API", "SEC", "A11Y"] },
+    "priority": { "enum": ["P0", "P1", "P2"] },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "route"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "route": { "type": "string", "pattern": "^/" },
+        "source": { "type": "string", "description": "file:line of the page/route definition the scenario was derived from" }
+      }
+    },
+    "target_url": {
+      "type": "string",
+      "pattern": "^\\{\\{(BASE_URL|API_BASE_URL)\\}\\}",
+      "description": "Always starts with {{BASE_URL}} (or {{API_BASE_URL}} for API-only scenarios) — never a literal host."
+    },
+    "preconditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auth"],
+      "properties": {
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": { "enum": ["anonymous", "role"] },
+            "role": { "type": "string", "minLength": 1 },
+            "credentials": {
+              "type": "object",
+              "description": "Values must be {{env.*}} references — never literal credentials.",
+              "additionalProperties": { "type": "string", "pattern": "^\\{\\{env\\.[A-Z][A-Z0-9_]*\\}\\}$" }
+            }
+          }
+        },
+        "seed": { "type": "array", "items": { "type": "string", "minLength": 3 } },
+        "feature_flags": { "type": "array", "items": { "type": "string" } },
+        "viewport": { "enum": ["desktop", "tablet", "mobile"] },
+        "locale": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "test_data": {
+      "type": "object",
+      "description": "Concrete, realistic, domain-correct values referenced from steps as {{test_data.<key>}}. Secrets only as {{env.*}}.",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+    "cleanup": { "type": "array", "items": { "type": "string", "minLength": 3 } },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "spec": { "type": "array", "items": { "type": "string" } },
+        "backlog": { "type": "array", "items": { "type": "string", "pattern": "^TAA-[0-9]+$" } },
+        "endpoints": { "type": "array", "items": { "type": "string", "pattern": "^(GET|POST|PUT|PATCH|DELETE) /" } },
+        "sources": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verification": {
+      "enum": ["live", "code-only", "spec-only"],
+      "description": "live = locators checked in a running local/staging app via browser MCP; code-only = derived from source with file:line evidence; spec-only = pre-implementation (QA-A), locators are a contract DEV must satisfy."
+    },
+    "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "description", "laya_question", "expected_primitive", "expected", "automation"],
+      "properties": {
+        "step_id": { "type": "integer", "minimum": 1 },
+        "description": { "type": "string", "minLength": 3 },
+        "channel": {
+          "enum": ["ui", "api"],
+          "description": "ui (default): the observation is the screen. api: the observation is the HTTP response (status + body) of the step's api_call."
+        },
+        "question_phase": {
+          "enum": ["after_actions", "before_actions"],
+          "description": "When the question is asked relative to this step's actions. Default after_actions. Use before_actions for 'what should happen next?' judgement questions."
+        },
+        "laya_question": { "type": "string", "minLength": 5 },
+        "expected_primitive": { "enum": ["noul", "choice", "score"] },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "description": "choice only: snake_case option keys."
+        },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": { "min": { "type": "number" }, "max": { "type": "number" } },
+          "description": "score only: e.g. {min:1,max:5}."
+        },
+        "expected": { "$ref": "#/$defs/expected" },
+        "human_hint": { "type": "string", "description": "How a human verifies this step when it isn't obvious from the screen (e.g. DevTools > Network)." },
+        "automation": { "$ref": "#/$defs/automation" },
+        "on_fail": { "enum": ["stop", "continue"], "description": "Default stop." }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "type": ["boolean", "string"],
+          "description": "noul: true/false. choice: one of options."
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1,
+          "description": "noul only. Laya returns p(yes) in [0,1]. PASS if answer=true and p >= min_confidence, or answer=false and p <= 1-min_confidence; otherwise the band in between is NULL (inconclusive = not a pass). Default 0.8."
+        },
+        "eq": { "type": "number" },
+        "gte": { "type": "number" },
+        "lte": { "type": "number" }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actions", "assertions"],
+      "properties": {
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "assertions": { "type": "array", "items": { "$ref": "#/$defs/assertion" } }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by"],
+      "description": "CLAUDE.md QA rule 5: getByRole > getByLabel > getByTestId (text only for reading messages). CSS/XPath are not representable on purpose.",
+      "properties": {
+        "by": { "enum": ["role", "label", "testid", "text"] },
+        "role": { "type": "string", "description": "ARIA role, by=role only (button, link, textbox, heading, alert, table, row, dialog, ...)" },
+        "name": { "type": "string", "description": "Accessible name, by=role only" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 6, "description": "heading level, by=role role=heading only" },
+        "value": { "type": "string", "description": "Label text / test id / visible text for by=label|testid|text" },
+        "exact": { "type": "boolean" },
+        "nth": { "type": "integer", "minimum": 0 },
+        "within": { "$ref": "#/$defs/locator" }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "enum": ["goto", "reload", "go_back", "click", "fill", "clear", "select", "check", "uncheck", "press", "hover", "upload", "wait_for", "set_viewport", "api_call"]
+        },
+        "url": { "type": "string", "pattern": "^\\{\\{(BASE_URL|API_BASE_URL)\\}\\}", "description": "goto only" },
+        "locator": { "$ref": "#/$defs/locator" },
+        "value": { "type": "string", "description": "fill: text; select: option label; press: key (e.g. Enter, Tab); upload: fixture path under tests/fixtures/" },
+        "state": { "enum": ["visible", "hidden", "attached", "detached"], "description": "wait_for only — web-first wait, never a fixed sleep" },
+        "viewport": { "enum": ["desktop", "tablet", "mobile"], "description": "set_viewport only" },
+        "request": { "$ref": "#/$defs/api_request" },
+        "expect": { "$ref": "#/$defs/api_expect" }
+      }
+    },
+    "api_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "path"],
+      "properties": {
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "path": { "type": "string", "pattern": "^/", "description": "Relative to {{API_BASE_URL}} (falls back to {{BASE_URL}})." },
+        "auth": { "type": "string", "pattern": "^(none|session|role:[A-Za-z0-9_-]+)$", "description": "none = no credentials; session = the scenario's logged-in user; role:<r> = another seeded role (authz/IDOR checks)" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "query": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+        "body": { "type": ["object", "array", "string"] }
+      }
+    },
+    "api_expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "body_has_keys": { "type": "array", "items": { "type": "string" } },
+        "body_contains": { "type": "object" },
+        "body_not_contains_keys": { "type": "array", "items": { "type": "string" }, "description": "e.g. passwordHash must never be returned" },
+        "max_ms": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["visible", "hidden", "enabled", "disabled", "checked", "focused", "text_contains", "text_equals", "value_equals", "count", "url_matches", "title_contains", "no_console_errors", "network_no_errors", "response", "a11y_no_violations"]
+        },
+        "locator": { "$ref": "#/$defs/locator" },
+        "value": { "type": "string", "description": "text_*/value_equals: expected text; url_matches: regex; title_contains: text" },
+        "eq": { "type": "integer", "minimum": 0 },
+        "gte": { "type": "integer", "minimum": 0 },
+        "lte": { "type": "integer", "minimum": 0 },
+        "url_pattern": { "type": "string", "description": "response / network_no_errors: substring or regex of the request URL" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "impact": { "enum": ["minor", "moderate", "serious", "critical"], "description": "a11y_no_violations: lowest impact that fails (default serious)" },
+        "timeout_ms": { "type": "integer", "minimum": 1, "maximum": 30000 }
+      }
+    }
+  }
+}

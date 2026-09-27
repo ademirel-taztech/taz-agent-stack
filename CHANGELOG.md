@@ -9,6 +9,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+**Test-scenario track — `/taa:writetest` + `taa-tester` (17th role):**
+- `taa-tester` agent: writes human-style test scenarios per page at three
+  cumulative levels — `light` (page works: one SMOKE per page), `normal`
+  (basic functions: happy path + main negative case per form), `hard` (full
+  FE + BE: every validation/boundary/empty-loading-error state/role, every
+  endpoint the page calls hit directly incl. 400/401/403/IDOR and sensitive
+  field leaks, keyboard + axe). Evidence-first (`file:line` per claim, never
+  an invented locator); optional read-only live locator verification through
+  the Playwright MCP on local/staging only. RUN mode executes a set through
+  the MCP and writes a result file; failures are reported, never fixed.
+- Scenario format v1.0 (`templates/taa/test-scenarios/`): `SCHEMA.md`
+  contract, `scenario` / `index` / `result` JSON Schemas and a complete
+  example set. Every step carries two layers over the same check — a
+  `laya_question` with `expected_primitive` `noul` (No/Yes/Null: Laya returns
+  p(yes), PASS above `min_confidence`, the middle band is inconclusive),
+  `choice` or `score` for a human or the Laya runner, and an `automation`
+  block (actions + assertions) that maps 1:1 to Playwright with
+  `role` > `label` > `testid` locators and web-first waits only. IDs follow
+  CLAUDE.md's `TC-<LAYER>-<NNN>`; hosts/credentials only as
+  `{{BASE_URL}}` / `{{env.X}}`.
+- `/taa:writetest [light|normal|hard] <route | file | all | text> [--url] [--run]`:
+  own `TESTSCENARIO` run (or reuses an active pipeline run), BRAIN recall at
+  `hard` for recurring finding classes, one gate, optional MCP run, archived
+  like every other track.
+- `/taa:start` integration: QA-A invokes `taa-tester` WRITE after `taa-qa`
+  Phase A under the same gate (`Chief: full` → hard, `Chief: light` →
+  normal, recorded as `Test level` in `state.md`); spec-derived locators are
+  a contract `taa-dev` builds against. QA-B runs the set through the MCP
+  before `taa-qa` Phase B when a local/staging URL exists; QA-B's own flow is
+  unchanged and scenario failures join its normal fix list.
+- `scripts/taa-scenarios.py` (stdlib-only): `validate` (schema subset +
+  primitive rules, noul steps must be headless-verifiable, no literal hosts
+  or credentials, env vars declared, layer↔level, execution order, per-page
+  coverage warnings, result files never `production`) and `render`
+  (regenerates the human checklist `README.md` from the JSON).
+  `tests/scenarios/run_tests.sh` + CI job `scenario-tests`.
+
+**Scenario runner — headless Playwright + local Laya model (`runner/`):**
+- `models/laya/v4`: the Laya multilingual ONNX model (mmBERT-base, 322M,
+  float16, text-only) copied from `Taz.SaaS.Backend/models/guardrail/v4`.
+  Binaries gitignored; configs, README and `SHA256SUMS` committed;
+  `scripts/taa-laya-model.sh` installs/restores them checksum-verified;
+  `install.sh --with-laya` installs one shared copy to `~/.taa/models/laya/v4`.
+- `runner/laya-judge` (.NET 10, ONNX Runtime 1.27 + Tokenizers.HuggingFace):
+  generic Laya inference for `noul` / `choice` / `score` with upstream prompt
+  construction and calibration, as a JSON-lines sidecar (`serve`) or one-shot
+  (`ask`). Parity with the Laya guardrail console on the same inputs: 65
+  probabilities, max |Δ| 4.9e-7.
+- `runner/` Playwright runner: one test per scenario in `index.json` order,
+  own browser context per scenario (role storageState, viewport, locale,
+  trace), every action/assertion from SCHEMA.md incl. `api_call` (cookie or
+  Bearer auth, body/key/leak/latency checks) and axe; Laya is fed the page's
+  URL, title, alerts and ARIA snapshot (or the HTTP response). Credentials
+  masked everywhere; production hosts refused; result file per
+  `result.schema.json` with per-step `laya` detail; screenshots + trace on
+  failure.
+- Judge modes: `shadow` (default — assertions decide, Laya recorded),
+  `assertions`, `both`, `laya`. Measured: the v4 checkpoint scores 5–7/12 on
+  balanced page-state yes/no questions in every observation format tried
+  (it says "yes" whenever the subject is mentioned), so it may not gate a
+  test yet. `TAA_LAYA_DATASET=1` collects assertion-labelled rows for
+  fine-tuning.
+- `npm run selftest`: the example set against a real login app; `SELFTEST_BUG=
+  message|leak|a11y` proves the runner fails the right scenario for each
+  injected defect. CI: `runner` job (typecheck + judge build + self-test in
+  `assertions` mode — the model isn't in CI).
+- `taa-tester` RUN, `/taa:writetest --run` and `/taa:start` QA-B now run the
+  set through the runner first, the Playwright MCP walk is the fallback.
+  SCHEMA.md: "What Laya sees" guidance; console/network/response assertions
+  are scoped to the whole scenario (so a later step can check a request an
+  earlier step made); result steps gain an optional `laya` object.
+
+### Fixed
+
+- `install.sh` copied only `templates/taa/*.md`, so `loadtest.template.js`
+  (referenced by `taa-qa`) never reached installed projects; it now copies
+  the whole `templates/taa/` tree (including `test-scenarios/`) and installs
+  `scripts/taa-scenarios.py`.
+- `codex/agents/*.toml` had drifted from `.claude/agents/*.md` (the
+  run-directory rework never reached the Codex copies, which the
+  `convert-to-codex-drift` CI job flags); regenerated.
+
+### Added (earlier in this cycle)
+
 **Marketing track now auto-pairs social copy with a visual:**
 - `marketing.md` § 1a (new): after `social` writes Instagram/LinkedIn copy,
   the orchestrator automatically invokes the `design` skill (Claude Design

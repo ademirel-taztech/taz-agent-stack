@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "test_id": "TC-UI-001",
+  "test_name": "Geçerli bilgilerle giriş yapan kullanıcı panele yönlendirilir",
+  "level": "normal",
+  "layer": "UI",
+  "priority": "P0",
+  "page": { "name": "Giriş", "route": "/login", "source": "apps/web/src/app/(auth)/login/page.tsx:1" },
+  "target_url": "{{BASE_URL}}/login",
+  "preconditions": {
+    "auth": { "mode": "anonymous" },
+    "seed": ["Aktif durumda, 'Muhasebe Uzmanı' rolüne sahip kullanıcı (TEST_USER_EMAIL) mevcut"],
+    "viewport": "desktop"
+  },
+  "test_data": {
+    "email": "{{env.TEST_USER_EMAIL}}",
+    "password": "{{env.TEST_USER_PASSWORD}}"
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "description": "Giriş sayfasının açılması",
+      "laya_question": "Bu sayfa geçerli bir kullanıcı giriş formu içeriyor mu?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true },
+      "automation": {
+        "actions": [{ "action": "goto", "url": "{{BASE_URL}}/login" }],
+        "assertions": [{ "type": "visible", "locator": { "by": "role", "role": "button", "name": "Giriş yap" } }]
+      }
+    },
+    {
+      "step_id": 2,
+      "description": "Bir sonraki mantıklı aksiyonun belirlenmesi ve formun doldurulup gönderilmesi",
+      "question_phase": "before_actions",
+      "laya_question": "Şu anki ekranda bir sonraki mantıklı aksiyon ne olmalı?",
+      "expected_primitive": "choice",
+      "options": ["formu_doldur", "hata_mesajini_oku", "sayfayi_terk_et"],
+      "expected": { "answer": "formu_doldur" },
+      "automation": {
+        "actions": [
+          { "action": "fill", "locator": { "by": "label", "value": "E-posta" }, "value": "{{test_data.email}}" },
+          { "action": "fill", "locator": { "by": "label", "value": "Şifre" }, "value": "{{test_data.password}}" },
+          { "action": "click", "locator": { "by": "role", "role": "button", "name": "Giriş yap" } }
+        ],
+        "assertions": []
+      }
+    },
+    {
+      "step_id": 3,
+      "description": "Panele yönlendirmenin ve kullanıcı adının doğrulanması",
+      "laya_question": "Kullanıcı giriş yaptıktan sonra ana panel (Genel Bakış) ekranına ulaştı mı?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true, "min_confidence": 0.85 },
+      "automation": {
+        "actions": [],
+        "assertions": [
+          { "type": "url_matches", "value": "/panel$" },
+          { "type": "visible", "locator": { "by": "role", "role": "heading", "name": "Genel Bakış" } },
+          { "type": "response", "url_pattern": "/api/auth/login", "method": "POST", "status": 200 }
+        ]
+      }
+    }
+  ],
+  "cleanup": ["Oturumu kapat (sağ üst menü > Çıkış yap) — başka senaryo bu oturuma dayanmaz"],
+  "traceability": {
+    "spec": ["SPEC §2 AC-1"],
+    "endpoints": ["POST /api/auth/login"],
+    "sources": ["apps/web/src/app/(auth)/login/page.tsx:1"]
+  },
+  "verification": "code-only",
+  "tags": ["auth", "happy-path"]
+}

@@ -8,7 +8,8 @@ Resolve the active run (`.taa/runs/*/state.md` — if none, say so and stop; if 
 2. **Artifacts:** which `<run-dir>/` files exist, their last-modified info, and any that are referenced but missing.
 3. **Backlog burn-down:** done / total tasks from `<run-dir>/backlog.md`.
 4. **Open items:** unresolved SEC findings, failing QA metrics, unanswered open questions from SPEC.
-5. **Archive size:** how many completed runs sit in `.taa/archive/` (from `.taa/archive/INDEX.md`'s line count) — purely informational, not something to act on.
-6. One-line recommendation for the next action (`/taa:continue`, approve pending gate, or fix list owner).
+5. **Test scenarios:** if `<run-dir>/test-scenarios/` exists — `Test level`, scenario count per level (from `index.json`), and the latest `results/*.json` summary (pass / fail / inconclusive / blocked), or "henüz koşulmadı".
+6. **Archive size:** how many completed runs sit in `.taa/archive/` (from `.taa/archive/INDEX.md`'s line count) — purely informational, not something to act on.
+7. One-line recommendation for the next action (`/taa:continue`, approve pending gate, or fix list owner).
 
 Do not modify anything. $ARGUMENTS

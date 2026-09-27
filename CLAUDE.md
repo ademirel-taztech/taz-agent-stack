@@ -72,6 +72,11 @@ This project uses the **TAA pipeline**: an adversarial, gated, multi-agent workf
   end (entrypoint → application → domain → infrastructure) with a `file:line` citation at
   every hop; `map:` for a subsystem, `impact:` for blast radius. Read-only, no gate,
   never fixes — findings route to `/taa:review`, `/taa:fix` or `/taa:refactor`
+- `/taa:writetest [light|normal|hard] <target> [--url <local/staging>] [--run]` — test-scenario
+  track: human-style scenarios (light = page works, normal = basic functions, hard = full
+  FE + BE) as JSON a human, the Laya runner or a headless browser executes step by step;
+  lands in `.taa/runs/<run-id>/test-scenarios/`, one gate. `/taa:start` runs the same
+  writer at QA-A (hard for `Chief: full`, normal for `Chief: light`) and executes it at QA-B
 - `/taa:research <soru>` — standalone PM market research (cited)
 - `/taa:docs <talep>` — docs track: manuals/guides/release notes with the same gates;
   WRITER's grounding rule: no claim without code/artifact evidence
@@ -98,6 +103,7 @@ Senaryolar onaylanmadan otomasyon kodu yazılmaz.
 | Tam E2E | `npx playwright test` |
 | Trace incele | `npx playwright show-trace <trace.zip>` |
 | Yük | `SCENARIO=load k6 run tests/load/k6-load.js` |
+| Senaryo seti (Playwright + Laya) | `cd taa-runner && BASE_URL=… TAA_SCENARIOS=.taa/runs/<id>/test-scenarios npm run scenarios` |
 
 ### Değişmez kurallar
 1. **Production'a test koşulmaz.** BASE_URL production'a benziyorsa dur ve sor.

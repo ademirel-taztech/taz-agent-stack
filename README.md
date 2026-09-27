@@ -25,11 +25,12 @@ Stage 1  PM      RESEARCH.md — web'den atıflı rakip/gap analizi         ⛩ 
 Stage 2  PO      SPEC.md (research'ü tüketir) + hiyerarşik backlog       ⛩ onay
 Stage 3  DES     DESIGN.md (9 başlık, token-only, gerçek veri) + mockup ⛩ onay
 Stage 4  ARCH    architecture.md + ADR'ler + DEV kontrat listesi        ⛩ onay
-Stage 5  QA-A    metrics.md (P95<200ms, coverage>80%) + test iskeletleri ⛩ onay
+Stage 5  QA-A    metrics.md (P95<200ms, coverage>80%) + test iskeletleri
+                 + test senaryoları (light/normal/hard, insan/Laya/headless) ⛩ onay
 Stage 6  DEV     task-task implementasyon, testler yeşilene kadar
 Stage 7  OPS     Dockerfile/CI, config matrisi, migration+rollback, runbook ⛩ onay
 Stage 8  SEC     severity-ranked denetim (+ COMPLIANCE); Critical/High → DEV'e geri (max 3 döngü)
-Stage 9  QA-B    metrik skorbordu
+Stage 9  QA-B    senaryo koşumu (Playwright + Laya) + metrik skorbordu
 Stage 10 DREAM   koşu brain'e konsolide edilir → bir dahaki sefere daha akıllı
 ```
 
@@ -80,6 +81,7 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | `/taa:refactor <hedef>` | Davranış-koruyan refactor: karakterizasyon testleri → refactor → SEC diff denetimi; SPEC yerine `.taa/invariants.md` |
 | `/taa:upgrade <paket\|framework>` | ARCH liderliğinde sürüm geçişi: breaking-change araştırması, aşamalı plan ve uygulama |
 | `/taa:onboard [odak]` | Brain + `.taa/` + architecture.md'den atıflı yeni geliştirici oryantasyon dokümanı |
+| `/taa:writetest [light\|normal\|hard] <hedef> [--url <local/staging>] [--run]` | Test senaryosu hattı: sayfaları insan test eder gibi adım adım yazar — **light** (sayfa çalışıyor), **normal** (temel fonksiyonlar), **hard** (tüm FE + BE: validasyon/sınır/durum/rol, sayfanın çağırdığı her endpoint 401/403/IDOR dahil, klavye + axe). Her adım iki katmanlı: insan/Laya için soru (`noul` evet/hayır, `choice`, `score`) + headless browser için Playwright'a birebir eşlenen aksiyon/assertion. `.taa/runs/<run-id>/test-scenarios/` altında `index.json` + `scenarios/TC-*.json` + üretilmiş `README.md` checklist; `scripts/taa-scenarios.py` mekanik doğrular. Tek kapı; `--run` ile [`runner/`](runner/README.md) üzerinden headless Playwright + yerel Laya modeliyle (yoksa Playwright MCP ile) koşar. `/taa:start` aynı yazarı QA-A'da çalıştırır (Chief full → hard, light → normal), QA-B'de koşar. Format: [`SCHEMA.md`](templates/taa/test-scenarios/SCHEMA.md) |
 | `/taa:explain <hedef>` | Kod anlama hattı: tek bir çalışma yolunu uçtan uca izler (endpoint/entrypoint → application → domain → infrastructure), her sıçramada `file:line` atfı, Mermaid sequence diyagramı; DI/mediator/queue gibi dinamik dikişleri kaydından çözer, çözemediğini "Açık sorular"a yazar. `map:` alt sistem haritası, `impact:` değişiklik yarıçapı. Salt-okunur, kapısız, **asla düzeltmez** — bulgular `/taa:review`·`/taa:fix`·`/taa:refactor`'a yönlendirilir |
 
 ## Doküman I/O: `/taa:ingest` ve `/taa:report`
@@ -109,9 +111,9 @@ CI (bkz. yol haritası) `scripts/convert-to-codex.py` çıktısı ile commit'len
 `codex/agents/` arasında drift olursa build'i kırar.
 
 ```
-.claude/agents/        16 pipeline rolü: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer, taa-explainer
+.claude/agents/        17 pipeline rolü: taa-pm, taa-po, taa-designer, taa-architect, taa-qa, taa-tester, taa-dev, taa-ops, taa-security, taa-compliance, taa-data, taa-support, taa-l10n, taa-brain, taa-chief, taa-writer, taa-explainer
                        + 5 bağımsız QA-kit subagent'ı: test-strategist, e2e-engineer, api-test-engineer, perf-engineer, test-triager
-.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard, explain
+.claude/commands/taa/  start, continue, status, review, brain, dream, steer, docs, research, marketing, ingest, report, fix, release, incident, refactor, upgrade, onboard, explain, writetest
 .claude/skills/        46 marketing skill'i (MIT, Corey Haines) + doc-ingest + doc-export — /taa:marketing ve /taa:ingest·/taa:report bunlara yönlendirir
                        + QA-kit: test-discovery, test-plan, test-automate, test-run (bkz. § Test hattı)
 requirements-doc.txt    doc-ingest/doc-export'un opsiyonel pip bağımlılıkları (`./install.sh --with-docs`)
@@ -120,10 +122,16 @@ scripts/taa-guard.sh            PostToolUse hook (Write/Edit/MultiEdit/NotebookE
 scripts/taa-guard-pretooluse.sh PreToolUse hook — secret şekilleri yazılmadan önce reddedilir
 scripts/taa-guard-bash-scan.sh  PostToolUse/Bash hook — Bash'le yazılan dosyaları `git status` ile yeniden tarar
 scripts/taa-guard-secrets.sh    üç script'in paylaştığı secret/PII desenleri
+scripts/taa-scenarios.py       test senaryosu doğrulayıcı + insan checklist'i üretici (yalnızca python3)
+scripts/taa-laya-model.sh      Laya ONNX modelini checksum doğrulamalı kurar (models/laya/)
+runner/                Senaryo koşucusu: headless Playwright + Laya yargıcı (.NET, ONNX Runtime) — bkz. runner/README.md
+models/laya/           Laya multilingual ONNX modeli (binary'ler gitignore'da; config + SHA256SUMS commit'li)
 tests/guard/            saf-bash guard test paketi (bats bağımlılığı yok)
+tests/scenarios/        taa-scenarios.py test paketi (örnek set geçer, her kural ihlali reddedilir)
 hooks/hooks.json       plugin kurulumunda guard'ı otomatik aktifleştirir
 hooks/settings.example.json   install.sh yolunda elle merge edilir
 templates/taa/         SPEC / DESIGN / architecture / metrics / backlog / state şablonları
+                       + test-scenarios/: SCHEMA.md, scenario/index/result JSON Schema'ları, eksiksiz örnek set
 templates/brain/       brain iskeleti + sayfa şablonu (compiled truth / evidence)
 .claude-plugin/        plugin + marketplace manifestleri
 CLAUDE.md              projeye giden hafıza kuralları
@@ -249,6 +257,53 @@ Bu yol ayrıca `taa` CLI'sini de kurar. Proje kurulumu `bin/taa`, `bin/taa.ps1` 
 
 Bu yolda TAA Guard'ı açmak için `hooks/settings.example.json` içeriğini projenizin `.claude/settings.json` dosyasına birleştirin (plugin kurulumunda guard otomatik aktiftir). Ajanlar oturum başında yüklenir — kurulumdan sonra oturumu yeniden başlatın.
 
+### v2.2.0 ile kurulumda değişenler
+
+Test senaryosu hattı (`/taa:writetest`, `taa-tester`) ve senaryo koşucusu
+(`runner/`: Playwright + Laya) bu sürümle geldi. Kurulumda değişenler:
+
+| | Önce | v2.2.0 |
+|---|---|---|
+| Ajanlar / komutlar | 16 rol | **17 rol** (`taa-tester`) + `/taa:writetest` |
+| `templates/taa/` | yalnız `*.md` kopyalanıyordu (`loadtest.template.js` hiç gitmiyordu — hata) | **tüm ağaç**: `test-scenarios/` (SCHEMA.md, 3 JSON Schema, örnek set) + `loadtest.template.js` |
+| `scripts/` | guard + backlog kontrolü | + `taa-scenarios.py` (senaryo doğrulayıcı / checklist üretici) |
+| Proje köküne | — | **`taa-runner/`** (Playwright koşucusu + .NET Laya yargıcı kaynağı; `node_modules` ve build çıktısı hariç) |
+| `.gitignore` | `.taa/inputs/`, `.taa/reports/`, eval sonuçları | + `taa-runner/{node_modules,.laya-judge-bin,playwright-report,test-results}/`, senaryo `results/evidence/`, `laya-dataset-*.jsonl`, `.partial-*.jsonl` (sonuç JSON'ları commit'lenir) |
+| Yeni bayrak | — | **`--with-laya`**: Laya ONNX modelini (650 MB) **bir kez** `~/.taa/models/laya/v4`'e kurar, SHA256 ile doğrular — tüm projeler paylaşır |
+| `state.md` şablonu | — | `Track: TESTSCENARIO`, `Test level: light\|normal\|hard` |
+
+**Yeni ön koşullar — hepsi opsiyonel, yalnız senaryoları otomatik koşmak için:**
+
+| Araç | Ne için | Yoksa |
+|---|---|---|
+| Node 20+ | `taa-runner` (Playwright) | senaryolar yine yazılır; insan `README.md` checklist'iyle ya da Playwright MCP ile koşar |
+| .NET 10 SDK | Laya yargıcı (ilk koşuda otomatik derlenir) | `TAA_JUDGE=assertions` — Laya'sız, yalnız deterministik kontroller |
+| Laya modeli | yargıcın modeli (`--with-laya` veya `scripts/taa-laya-model.sh`) | aynı: `TAA_JUDGE=assertions` |
+| python3 | set doğrulaması (`taa-scenarios.py`) — zaten ön koşul | koşucu doğrulamayı atlar ve uyarır |
+
+```bash
+# yeni proje
+./install.sh /path/to/project --with-laya
+cd /path/to/project/taa-runner && npm install && npx playwright install chromium
+
+# modeli ayrıca / başka kaynaktan kurmak
+scripts/taa-laya-model.sh --from /path/to/laya/v4 --to ~/.taa/models/laya/v4
+```
+
+**Zaten kurulu bir projeyi güncellerken:** `./install.sh /path/to/project`
+komutunu tekrar çalıştırın. Agent, komut, şablon, script ve `taa-runner/`
+yenilenir. **İstisna `CLAUDE.md`:** installer, içinde TAA kuralları olan bir
+`CLAUDE.md`'ye dokunmaz. Yeni `/taa:writetest` satırını ve QA tablosundaki
+"Senaryo seti" komutunu bu deponun [`CLAUDE.md`](CLAUDE.md)'sinden elle
+taşıyın. Ajanlar oturum başında yüklendiği için ardından Claude Code
+oturumunu yeniden başlatın.
+
+**Plugin kurulumunda:** koşucu plugin'in içinde gelir
+(`${CLAUDE_PLUGIN_ROOT}/runner`) ve `taa-tester` onu otomatik bulur. İlk
+kullanımda `npm install` bu dizinde yapılır. Plugin model binary'sini
+içermez; modeli bir kez kurun:
+`"${CLAUDE_PLUGIN_ROOT}/scripts/taa-laya-model.sh" --from <v4 dizini> --to ~/.taa/models/laya/v4`.
+
 ## `taa` CLI
 
 `taa`, farklı sağlayıcılardaki modelleri tek bir config üstünden yönetip **Codex** veya **Claude Code** çalıştırmak için hafif bir başlatıcıdır. Claude tarafında arkada **LiteLLM proxy** açar; böylece yerel modeller veya OpenAI-uyumlu başka uç noktalar Claude Code'a tek biçimde sunulur.
@@ -361,7 +416,7 @@ Varsayılan set `.mcp.json.example` içinde: **GitHub** (backlog⇄issue senkron
 
 ## OpenAI Codex desteği
 
-`codex/` adaptörü: `AGENTS.md` (Codex talimat zinciri), `codex/agents/*.toml` (16 rolün otomatik dönüşümü — `scripts/convert-to-codex.py`), TAA Guard git pre-commit olarak (`scripts/install-precommit.sh`). Pipeline'a giriş: *"Run the TAA pipeline for: <talep>"*. Fark tablosu: [codex/README.md](codex/README.md)
+`codex/` adaptörü: `AGENTS.md` (Codex talimat zinciri), `codex/agents/*.toml` (17 rolün otomatik dönüşümü — `scripts/convert-to-codex.py`), TAA Guard git pre-commit olarak (`scripts/install-precommit.sh`). Pipeline'a giriş: *"Run the TAA pipeline for: <talep>"*. Fark tablosu: [codex/README.md](codex/README.md)
 
 ## Doküman hattı: `/taa:docs`
 
@@ -380,6 +435,102 @@ Yazılımı üreten aynı stack onu pazarlar da: [Corey Haines'in marketingskill
 /taa:marketing launch: lisanslama modülü v2 — LinkedIn postu + blog + 30sn video senaryosu
 /taa:marketing pricing sayfamızı Van Westendorp'a göre gözden geçir
 ```
+
+## Test senaryosu hattı: yazdır → onayla → koş
+
+Sayfaları **insan test eder gibi** adım adım yazan ve aynı dosyadan **insan,
+Laya veya headless Playwright** ile koşulabilen senaryolar.
+Format: [`templates/taa/test-scenarios/SCHEMA.md`](templates/taa/test-scenarios/SCHEMA.md) ·
+koşucu: [`runner/README.md`](runner/README.md).
+
+| Seviye | Ne test eder |
+|---|---|
+| `light` | Sayfa çalışıyor mu? Sayfa başına bir SMOKE: açılıyor, ana başlık ve ana aksiyon görünüyor, konsol hatası yok, 4xx/5xx yok |
+| `normal` | Temel fonksiyonlar: her formun mutlu yolu + ana negatif durumu, liste/arama/filtre, CRUD, navigasyon |
+| `hard` | Tüm FE + BE: her alanın validasyonu ve sınır değerleri, boş/yükleniyor/hata durumları, her rolün yetkisi, sayfanın çağırdığı her endpoint'e doğrudan istek (400/401/403/IDOR, hassas alan sızıntısı), klavye + axe |
+
+Seviyeler kümülatiftir: `hard` seçilirse `light` ve `normal` senaryoları da yazılır.
+
+### 1) `/taa:start` içinde — otomatik
+
+Ayrı bir şey yapmanız gerekmez:
+
+1. **Stage 0:** CHIEF sorusuna verdiğiniz cevap seviyeyi belirler:
+   `full` → **hard**, `light` → **normal** (`state.md` → `Test level`).
+2. **QA-A:** `taa-qa` metrikleri ve iskeletleri yazar, ardından `taa-tester`
+   SPEC/DESIGN/architecture'dan senaryoları yazar. İkisi **aynı onay
+   kapısında** gelir. Seviyeyi ya da içeriği değiştirmek için:
+   `düzelt: seviye hard olsun` / `düzelt: fatura listesinde sayfalama senaryosu eksik`.
+3. **DEV:** senaryolardaki başlık, etiket ve düğme adları DEV için
+   **sözleşmedir**. UI, bu locator'lar çözülecek şekilde yazılır; senaryo
+   dosyası düzenlenmez.
+4. **QA-B:** Çalışan uygulamanın local/staging adresi sorulur (production
+   asla kabul edilmez). Set `taa-runner` ile headless koşulur. Kalan
+   senaryolar normal DEV düzeltme listesine girer.
+
+### 2) Bağımsız — `/taa:writetest`
+
+Mevcut bir projede (brownfield) koddan senaryo yazdırmak için:
+
+```text
+/taa:writetest light all                                   # her sayfa için "açılıyor mu" testi
+/taa:writetest /login                                      # normal (varsayılan) — giriş sayfası
+/taa:writetest hard fatura oluşturma ekranı                # serbest metin → route eşlenir
+/taa:writetest normal /faturalar --url http://localhost:3001          # locator'lar canlı sayfada doğrulanır (salt okunur)
+/taa:writetest hard /faturalar --url http://localhost:3001 --run      # yaz, onayla, hemen koş
+```
+
+Akış: (hard ise brain'den tekrarlayan bulgu sınıfları) → `taa-tester`
+koddan yazar ve her iddia için `file:line` kanıtı gösterir → validator
+mekanik kontrol yapar → **tek onay kapısı** (`onayla / düzelt: <not> / iptal`)
+→ `--run` verilmişse koşum → run `.taa/archive/`'e taşınır.
+Aktif bir `/taa:start` run'ı varsa onun dizinine yazar.
+
+Çıktı (`.taa/runs/<run-id>/test-scenarios/`):
+
+```
+index.json                 koşum listesi (Laya / otomasyon bu sırayla koşar)
+scenarios/TC-SMOKE-001.json   her senaryo: adım başına soru + beklenen + aksiyon/assertion
+README.md                  insan için checklist (JSON'dan üretilir, elle düzenlenmez)
+results/                   koşum sonuçları; evidence/ altında ekran görüntüsü + trace
+```
+
+### 3) Koşmak
+
+**İnsan:** `README.md` checklist'ini sırayla uygular. Her adımda
+Yapılacaklar → Soru → Beklenen → ☐ Geçti / ☐ Kaldı.
+
+**Headless (Playwright + Laya):**
+
+```bash
+cd taa-runner            # kaynak depoda: runner/
+BASE_URL=http://localhost:3001 \
+API_BASE_URL=http://localhost:5080 \
+TAA_SCENARIOS=../.taa/runs/<run-id>/test-scenarios \
+TEST_USER_EMAIL=… TEST_USER_PASSWORD=… \
+npm run scenarios
+```
+
+- Senaryonun istediği `{{env.X}}` değerleri ortamdan gelir
+  (`index.json` → `env.required`). Eksik olan senaryo `blocked` olur.
+- Rol gerektiren senaryolar için storageState verin:
+  `TAA_AUTH_STATE_MUHASEBE_UZMANI=./auth/muhasebe.json`
+  (`templates/qa-kit/examples/auth.setup.ts` ile üretilir).
+- Alt küme koşmak için: `TAA_LEVEL=light`, `TAA_ONLY=TC-SMOKE-001,TC-NEG-003`.
+- Sonuç: `results/<stamp>-playwright.json`. Başarısız adımlar için
+  `results/evidence/` altında ekran görüntüsü ve trace; HTML rapor
+  `taa-runner/playwright-report/` altında.
+- Kurulumu denemek için: `npm run selftest` (örnek seti gömülü bir giriş
+  uygulamasına karşı koşar, 5/5 geçmeli).
+
+**Laya'nın rolü — dürüst not:** Laya (yerel, metin tabanlı ONNX model)
+her adımın sorusunu sayfanın erişilebilirlik ağacına bakarak cevaplar.
+Ölçümde bugünkü v4 modeli sayfa durumu sorularında **şans seviyesinde**
+çıktı (5–7/12). Bu yüzden varsayılan mod **`shadow`**: geç/kal kararını
+deterministik assertion'lar verir, Laya'nın cevabı ve assertion'larla
+uyuşup uyuşmadığı sonuca kaydedilir. `TAA_LAYA_DATASET=1` fine-tune için
+etiketli veri toplar. Modelsiz koşmak için `TAA_JUDGE=assertions`
+kullanın. Ayrıntı: [`models/laya/README.md`](models/laya/README.md).
 
 ## Test hattı: QA-kit
 
@@ -422,14 +573,14 @@ ile otomatik state yedekleme, CI drift kontrolü (`convert-to-codex.py` çıktı
 vs commit'lenmiş `codex/agents/`). Değerlendirilip **şimdilik implemente
 edilmeyen** roller (bir dış denetimin notu): UX-researcher, FinOps (CHIEF'in
 "budget" kavramına gerçek maliyet — token + bulut — ölçümü), bağımsız
-accessibility-auditor — gelecekte istenirse mevcut 16 rolün kalıbını taklit
+accessibility-auditor — gelecekte istenirse mevcut 17 rolün kalıbını taklit
 ederek eklenebilirler.
 
 ---
 
 ## English quickstart
 
-TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 16 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, a read-only code Explainer that traces an execution path across layers with a `file:line` citation per hop, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back, and a standalone QA-kit (`/test-discovery` → `/test-plan` [approval] → `/test-automate` → `/test-run`, plus 5 specialist subagents for Playwright E2E, API/contract, k6 load, and red-test triage) for repos that need full test-engineering coverage outside the pipeline — a full software-company agent set: build it, test it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
+TAA is an adversarial, approval-gated multi-agent SDLC pipeline for Claude Code — 17 least-privilege subagents (the core PM→PO→DES→ARCH→QA→DEV→OPS→SEC→QA gated pipeline, plus a read-only Chief-of-Staff producing evidence-based steering briefs before every human gate, a read-only code Explainer that traces an execution path across layers with a `file:line` citation per hop, a scenario Tester that writes light/normal/hard test scenarios a human, the Laya runner or a headless browser executes step by step, plus data/compliance/support/l10n specialists), human gates after every stage, all decisions frozen into versioned `.taa/*.md` artifacts — **plus an institutional-memory brain** (recall at Stage 0, dream-cycle consolidation at Stage 10, recurring findings auto-promoted to a mandatory security checklist) and deterministic PreToolUse/PostToolUse guard hooks (secrets — including `.md`/`.taa` artifacts and Bash-written files, lorem ipsum, hard-coded colors, interpolated SQL → blocked by code). Beyond code it ships a grounded docs track (`/taa:docs`), a marketing track (`/taa:marketing`) bundling the 46 MIT-licensed [marketing skills by Corey Haines](https://github.com/coreyhaines31/marketingskills), and a doc I/O track (`/taa:ingest`, `/taa:report`) that turns office files (xlsx/docx/pdf/pptx/vsdx) into cited Markdown evidence and back, and a standalone QA-kit (`/test-discovery` → `/test-plan` [approval] → `/test-automate` → `/test-run`, plus 5 specialist subagents for Playwright E2E, API/contract, k6 load, and red-test triage) for repos that need full test-engineering coverage outside the pipeline — a full software-company agent set: build it, test it, document it, market it. Docs: [PIPELINE](docs/PIPELINE.md) · [BRAIN](docs/BRAIN.md).
 
 ```bash
 # recommended — nothing is copied into your project:
@@ -437,9 +588,10 @@ claude plugin marketplace add ademirel-taztech/taz-agent-stack
 claude plugin install taa@taz-marketplace
 
 # or copy-based:
-./install.sh /path/to/project    # or --global
+./install.sh /path/to/project    # or --global; add --with-laya for the scenario runner's model
 
 /taa:start <your feature request>
+/taa:writetest normal /login --url http://localhost:3001 --run   # human-style scenarios, run headless
 ```
 
 ## License

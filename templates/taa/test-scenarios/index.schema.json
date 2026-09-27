@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "taa/test-scenarios/index.schema.json",
+  "title": "TAA test scenario manifest (index.json)",
+  "description": "Run list for a scenario set. `scenarios` is in execution order (light before normal before hard, P0 before P1 before P2) — Laya and headless runners iterate it top to bottom.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "generated_at", "level", "target", "verification", "env", "pages", "scenarios"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "run_id": { "type": "string", "minLength": 3 },
+    "generated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "level": { "enum": ["light", "normal", "hard"], "description": "Highest level generated; the set contains every lower level too." },
+    "target": { "type": "string", "minLength": 1, "description": "What was asked for: a route, a page file, `all`, or the /taa:start request." },
+    "verification": { "enum": ["live", "code-only", "spec-only", "mixed"] },
+    "env": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "description": "Every {{BASE_URL}} / {{API_BASE_URL}} / {{env.X}} variable the set references."
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "route", "scenarios"],
+        "properties": {
+          "name": { "type": "string" },
+          "route": { "type": "string", "pattern": "^/" },
+          "source": { "type": "string" },
+          "scenarios": { "type": "array", "items": { "type": "string", "pattern": "^TC-[A-Z0-9]+-[0-9]{3}$" } }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["test_id", "file", "level", "layer", "priority"],
+        "properties": {
+          "test_id": { "type": "string", "pattern": "^TC-(SMOKE|UI|NEG|E2E|API|SEC|A11Y)-[0-9]{3}$" },
+          "file": { "type": "string", "pattern": "^scenarios/TC-[A-Z0-9]+-[0-9]{3}\\.json$" },
+          "level": { "enum": ["light", "normal", "hard"] },
+          "layer": { "enum": ["SMOKE", "UI", "NEG", "E2E", "API", "SEC", "A11Y"] },
+          "priority": { "enum": ["P0", "P1", "P2"] }
+        }
+      }
+    },
+    "out_of_scope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Pages/functions deliberately not covered, each with a reason — never silently skipped."
+    }
+  }
+}

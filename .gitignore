@@ -17,3 +17,16 @@ __pycache__/
 .taa/reports/
 **/evals/results-*
 .claude/settings.json
+
+# Laya model binaries (650 MB model.onnx, 34 MB tokenizer.json) — too large
+# for git. Configs, README and SHA256SUMS under models/laya/<ver>/ ARE
+# committed; install the binaries with scripts/taa-laya-model.sh.
+models/laya/*/model.onnx
+models/laya/*/tokenizer/tokenizer.json
+models/laya/*/.DS_Store
+
+# Laya Playwright runner build/run output
+runner/node_modules/
+runner/.laya-judge-bin/
+runner/playwright-report/
+runner/test-results/

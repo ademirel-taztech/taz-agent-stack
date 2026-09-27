@@ -1,0 +1,20 @@
+{
+  "name": "taa-scenario-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Executes TAA test-scenario sets (templates/taa/test-scenarios/SCHEMA.md) headless with Playwright; the Laya multilingual ONNX model answers each step's laya_question.",
+  "type": "module",
+  "scripts": {
+    "build:judge": "dotnet build laya-judge -c Release -o .laya-judge-bin",
+    "scenarios": "playwright test",
+    "selftest": "node selftest/run.mjs",
+    "judge:ask": "dotnet .laya-judge-bin/LayaJudge.dll ask",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

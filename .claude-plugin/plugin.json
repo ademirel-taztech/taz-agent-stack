@@ -1,7 +1,7 @@
 {
   "name": "taa",
   "description": "TAA — adversarial, approval-gated multi-agent SDLC pipeline (PO/Design/Arch/QA/Dev/Sec) with an institutional-memory brain and deterministic guard hooks.",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "author": { "name": "Taz" },
   "homepage": "https://github.com/ademirel-taztech/taz-agent-stack",
   "license": "MIT",
@@ -24,6 +24,7 @@
     "./.claude/agents/taa-qa.md",
     "./.claude/agents/taa-security.md",
     "./.claude/agents/taa-support.md",
+    "./.claude/agents/taa-tester.md",
     "./.claude/agents/taa-writer.md",
     "./.claude/agents/api-test-engineer.md",
     "./.claude/agents/e2e-engineer.md",

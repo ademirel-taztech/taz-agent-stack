@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "test_id": "TC-SMOKE-001",
+  "test_name": "Giriş sayfası açılıyor ve form görünüyor",
+  "level": "light",
+  "layer": "SMOKE",
+  "priority": "P0",
+  "page": { "name": "Giriş", "route": "/login", "source": "apps/web/src/app/(auth)/login/page.tsx:1" },
+  "target_url": "{{BASE_URL}}/login",
+  "preconditions": { "auth": { "mode": "anonymous" }, "viewport": "desktop" },
+  "steps": [
+    {
+      "step_id": 1,
+      "description": "Giriş sayfasının yüklenmesi ve kontrolü",
+      "laya_question": "Bu sayfa geçerli bir kullanıcı giriş formu içeriyor mu?",
+      "expected_primitive": "noul",
+      "expected": { "answer": true, "min_confidence": 0.8 },
+      "automation": {
+        "actions": [{ "action": "goto", "url": "{{BASE_URL}}/login" }],
+        "assertions": [
+          { "type": "visible", "locator": { "by": "role", "role": "heading", "name": "Hesabınıza giriş yapın" } },
+          { "type": "visible", "locator": { "by": "label", "value": "E-posta" } },
+          { "type": "visible", "locator": { "by": "label", "value": "Şifre" } },
+          { "type": "enabled", "locator": { "by": "role", "role": "button", "name": "Giriş yap" } }
+        ]
+      }
+    },
+    {
+      "step_id": 2,
+      "description": "Sayfa yüklenirken konsol ve ağ hatası olmadığının kontrolü",
+      "laya_question": "Sayfada hata ekranı, boş beyaz alan veya kırık bileşen görünüyor mu?",
+      "expected_primitive": "noul",
+      "expected": { "answer": false, "min_confidence": 0.8 },
+      "human_hint": "Tarayıcıda F12 > Console sekmesinde kırmızı hata, Network sekmesinde 4xx/5xx dönen istek olmamalı.",
+      "automation": {
+        "actions": [],
+        "assertions": [
+          { "type": "no_console_errors" },
+          { "type": "network_no_errors", "url_pattern": "/" }
+        ]
+      }
+    }
+  ],
+  "traceability": { "sources": ["apps/web/src/app/(auth)/login/page.tsx:1"] },
+  "verification": "code-only",
+  "tags": ["auth", "smoke"]
+}
