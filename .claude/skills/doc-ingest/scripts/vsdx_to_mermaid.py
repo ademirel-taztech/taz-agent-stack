@@ -40,7 +40,7 @@ def convert(vsdx_path: str, page_ref=None) -> str:
         import vsdx
     except ImportError:
         print(
-            "ERROR: the `vsdx` Python package isn't installed.\n"
+            "ERROR: the `vsdx` Python package is not installed.\n"
             "Install it with: pip install -r requirements-doc.txt (or `pip install vsdx`)\n"
             "I can't guess this diagram's structure without it — stopping honestly.",
             file=sys.stderr,
