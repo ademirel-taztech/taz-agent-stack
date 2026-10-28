@@ -52,7 +52,7 @@ def main(input_path: str, output_path: str, theme_path: str = None):
         from pptx.util import Inches
     except ImportError:
         print(
-            "ERROR: python-pptx isn't installed. Run: pip install -r requirements-doc.txt "
+            "ERROR: python-pptx is not installed. Run: pip install -r requirements-doc.txt "
             "(or `./install.sh --with-docs`). Not falling back to a hand-built pptx.",
             file=sys.stderr,
         )

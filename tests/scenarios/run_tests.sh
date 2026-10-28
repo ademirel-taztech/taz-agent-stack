@@ -44,7 +44,9 @@ expect() {
     echo "PASS: $desc"
     PASS=$((PASS + 1))
   else
-    echo "FAIL: $desc (expected exit $expected${needle:+ with '$needle'}, got $rc)"
+    local with_needle=""
+    [[ -n "$needle" ]] && with_needle=" with '$needle'"
+    echo "FAIL: $desc (expected exit $expected$with_needle, got $rc)"
     printf '%s\n' "$out" | sed 's/^/    /'
     FAIL=$((FAIL + 1))
   fi

@@ -81,7 +81,7 @@ def main(input_path: str, output_path: str):
         from openpyxl.styles import Font
     except ImportError:
         print(
-            "ERROR: openpyxl isn't installed. Run: pip install -r requirements-doc.txt "
+            "ERROR: openpyxl is not installed. Run: pip install -r requirements-doc.txt "
             "(or `./install.sh --with-docs`). Not falling back to a hand-built xlsx.",
             file=sys.stderr,
         )

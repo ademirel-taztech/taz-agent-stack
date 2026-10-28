@@ -114,9 +114,9 @@ install_windows_global_cli() {
 
   echo "✖ Could not update Windows PATH automatically."
   echo "  Create $win_dir and copy these files into it:"
-  echo "  - templates/bin/taa.ps1 -> C:\\tools\\taa\\taa.ps1"
-  echo "  - templates/bin/taa.cmd -> C:\\tools\\taa\\taa.cmd"
-  echo "  Then add C:\\tools\\taa to your Windows PATH."
+  printf '%s\n' '  - templates/bin/taa.ps1 -> C:\tools\taa\taa.ps1'
+  printf '%s\n' '  - templates/bin/taa.cmd -> C:\tools\taa\taa.cmd'
+  printf '%s\n' '  Then add C:\tools\taa to your Windows PATH.'
 }
 
 if [[ "${ARGS[0]:-}" == "--global" ]]; then
