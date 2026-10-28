@@ -2,8 +2,8 @@
 # TAA Check Backlog — mechanical pre-DREAM / SEC gate: never LLM-judged.
 # Verifies (1) every backlog item is Status: DONE, and (2) no code TODO/FIXME
 # cites a TAA-### item the backlog claims is DONE (a scoreboard/code mismatch
-# — the orphan-TODO guard in taa-guard.sh only checks that a TODO references
-# *some* TAA-### id, never whether that id is still open).
+# — taa-guard.sh now blocks every new TODO/FIXME/HACK/XXX comment, so this
+# check catches ones that predate that rule or slipped in outside the hooks).
 #
 # Portable on purpose: bash 3.2 (macOS system bash, no associative arrays)
 # and BSD awk (no gawk-only 3-arg match()) both work — only POSIX awk

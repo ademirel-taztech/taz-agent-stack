@@ -46,7 +46,7 @@ Anayasa: SEC "güvenli mi", QA "kanıtlandı mı", CHIEF "değer mi" — "devam 
 | **İnsan onay kapıları** | ✖ | ✔ | ✔ + `düzelt:` notları hafızaya işlenir |
 | **Kalıcı kurumsal hafıza** | ✖ stateless | ✖ run-scoped | ✔ Brain: pattern/ADR/bulgu sayfaları, atıf zorunlu, `/taa:dream` |
 | **Tekrarlanan bulgu ≥2 → otomatik zorunlu kontrol** | ✖ | ✖ | ✔ `findings/CHECKLIST.md`, SEC her incelemede okur |
-| **Deterministik guard'lar** (hook) | ✖ | ✖ | ✔ secret (PreToolUse deny + PostToolUse, `.md`/`.taa` dahil) / lorem-ipsum / hard-coded renk / interpolated SQL / orphan TODO → blok; Bash yazımları da `git status` ile yeniden taranır |
+| **Deterministik guard'lar** (hook) | ✖ | ✖ | ✔ secret (PreToolUse deny + PostToolUse, `.md`/`.taa` dahil) / lorem-ipsum / hard-coded renk / interpolated SQL / her `TODO`/`FIXME`/`HACK`/`XXX` yorumu → blok; Bash yazımları da `git status` ile yeniden taranır |
 | Oturum çökse de devam | değişken | kısmi | ✔ `.taa/state.md` + `/taa:continue` |
 | Brownfield saygısı | ✖ | kısmi | ✔ ARCH önce keşif+taklit; yarışan desen = SEC bulgusu |
 | **Kanıt-temelli steering** | ✖ | ✖ | ✔ CHIEF: her kapıdan önce scope-creep/bütçe/risk brief'i; kill-switch analizi; salt tavsiye, yetkisiz |

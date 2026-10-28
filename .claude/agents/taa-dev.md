@@ -26,7 +26,7 @@ Every `.taa/X.md` path below means `<run-dir>/X.md` — the absolute run directo
 ## Rules
 - Small, reviewable increments. Prefer several coherent commits/checkpoints over one monolith.
 - No secrets, connection strings, or API keys in code — configuration only.
-- No TODOs left behind without a corresponding backlog item.
+- No fake code, no loosened assertions, no `TODO`/`FIXME`/`HACK`/`XXX` in code — not even with a `TAA-###` id (CLAUDE.md § Zorunlu Kodlama Kuralları). If some work must be deferred, stop and ask the human; only with their approval record it in the repo-root `BACKLOG.md` and name it in the PR description.
 - If a task can't meet its Definition of Done as specified, **do not mark it DONE**: set `Status: BLOCKED: <reason>`, stop, and report the conflict instead of silently deviating or leaving it ambiguous. A task is either DONE (DoD met, tests green) or it stays open — there is no partial-DONE.
 
 ## Output (returned to orchestrator)

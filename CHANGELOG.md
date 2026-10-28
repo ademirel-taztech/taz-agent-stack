@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+**Mandatory coding rules + git flow (static, every agent, every task):**
+- `CLAUDE.md`, `codex/AGENTS.md` and the new root `CODEX.md` carry the same
+  "Zorunlu Kodlama Kuralları" block: no fake code, assertions are never
+  loosened, no TODO left in code; work that must be deferred is first asked to
+  the human and, once approved, recorded in `BACKLOG.md`. They also carry the
+  mandatory git flow `Pull → Branch → Code → Commit → Push → PR → Merge → Pull`.
+- `scripts/taa-guard.sh` rule 5 now blocks every `TODO`/`FIXME`/`HACK`/`XXX`
+  comment (`//`, `/* */`, `*`, `#`, `<!--`, `--`), including ones that carry a
+  `TAA-###` id; `tests/guard/run_tests.sh` covers each comment style plus
+  pass cases for identifiers and prose.
+- `taa-dev` (and the regenerated `codex/agents/taa_dev.toml`) follows the new
+  rule instead of "no TODO without a backlog item".
+- `install.sh` creates `BACKLOG.md` (from `templates/BACKLOG.template.md`) and
+  `CODEX.md` in the target project when they don't exist yet.
+
 ### Added
 
 **Test-scenario track — `/taa:writetest` + `taa-tester` (17th role):**

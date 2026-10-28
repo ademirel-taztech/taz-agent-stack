@@ -91,8 +91,11 @@ case "$FILE" in
       && fail "SQL-INJECTION" "interpolated raw SQL; use parameters / FromSqlInterpolated" ;;
 esac
 
-# 5) Orphan TODOs — every TODO must reference a backlog id
-grep -nE '//[[:space:]]*TODO' "$FILE" | grep -vE 'TAA-[0-9]+' | head -1 \
-  && fail "ORPHAN-TODO" "TODO without a TAA-### backlog reference"
+# 5) TODO markers — none allowed in code, not even with a backlog id
+# (CLAUDE.md § Zorunlu Kodlama Kuralları, rules 3-4): work is finished in the
+# task, or the human is asked and the deferral is recorded in BACKLOG.md.
+# Matches TODO/FIXME/HACK/XXX right after a comment opener: // /* * # <!-- --
+grep -nE '(//|/\*|\*|#|<!--|--)[[:space:]]*(TODO|FIXME|HACK|XXX)\b' "$FILE" | head -1 \
+  && fail "TODO" "TODO/FIXME/HACK/XXX comment left in code; finish the work, or ask the human and record it in BACKLOG.md"
 
 exit 0

@@ -204,6 +204,21 @@ else
   echo "✔ Created CLAUDE.md"
 fi
 
+# Mandatory coding rules: deferred work lives only in BACKLOG.md (no TODOs in
+# code), and Codex reads the same rules from CODEX.md / codex/AGENTS.md.
+if [[ -f "$TARGET/BACKLOG.md" ]]; then
+  echo "• BACKLOG.md already exists — kept as is"
+else
+  cp "$SRC/templates/BACKLOG.template.md" "$TARGET/BACKLOG.md"
+  echo "✔ Created BACKLOG.md"
+fi
+if [[ -f "$TARGET/CODEX.md" ]]; then
+  echo "• CODEX.md already exists — kept as is; merge the rules from $SRC/CODEX.md if missing"
+else
+  cp "$SRC/CODEX.md" "$TARGET/CODEX.md"
+  echo "✔ Created CODEX.md"
+fi
+
 # Everything under .taa/runs/<id>/ and .taa/archive/<id>/ (state, SPEC,
 # backlog, review, etc.) is meant to be committed as the project's audit
 # trail — but generated binary/regenerable output from doc-ingest/doc-export/
