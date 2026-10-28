@@ -95,11 +95,21 @@ check_exit "interpolated raw SQL is BLOCKED" \
 check_exit "parameterized SQL passes" \
   "UserRepository.cs" 'db.Database.ExecuteSqlInterpolated($"SELECT * FROM Users WHERE Id = {id}");' 0
 
-# --- 5) Orphan TODOs ------------------------------------------------------
+# --- 5) TODO markers — none allowed, even with a backlog id ---------------
 check_exit "TODO without backlog ref is BLOCKED" \
   "Worker.cs" '// TODO clean this up later' 2
-check_exit "TODO with TAA-### ref passes" \
-  "Worker.cs" '// TODO TAA-042 clean this up later' 0
+check_exit "TODO with TAA-### ref is BLOCKED too (no TODO in code at all)" \
+  "Worker.cs" '// TODO TAA-042 clean this up later' 2
+check_exit "FIXME in a # comment (.py) is BLOCKED" \
+  "worker.py" '# FIXME handle the retry case' 2
+check_exit "HACK in a /* */ comment (.ts) is BLOCKED" \
+  "client.ts" 'const t = 5; /* HACK: hard wait until the API is ready */' 2
+check_exit "XXX in a -- comment (.sql) is BLOCKED" \
+  "migration.sql" 'ALTER TABLE users ADD COLUMN tier text; -- XXX backfill later' 2
+check_exit "identifiers containing 'todo' are not comments and pass" \
+  "TodoList.ts" 'const todoItems = loadTodos(); export const TODO_STATUS = "open";' 0
+check_exit ".md prose that names TODO as a rule passes (content checks skipped)" \
+  "CLAUDE.md" '3. **TODO bırakılmaz.** // TODO markers are blocked by the guard.' 0
 
 # --- Acceptance criterion 2: Bash-written .cs file caught by bash-scan ---
 GIT_REPO="$WORKDIR/gitrepo"

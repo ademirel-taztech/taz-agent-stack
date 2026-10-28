@@ -45,7 +45,7 @@ cross-references — plus `metadata.version`), optionally `references/*.md` and
 
 `scripts/taa-guard.sh` (+ `taa-guard-pretooluse.sh`, `taa-guard-bash-scan.sh`,
 `taa-guard-secrets.sh`) blocks secrets, PII in the brain, lorem-ipsum,
-hard-coded colors, interpolated SQL, and orphan TODOs by code, not by asking
+hard-coded colors, interpolated SQL, and any TODO/FIXME/HACK/XXX comment by code, not by asking
 the model to remember. If a guard change is needed, fix the underlying rule —
 never bypass or rename the guard, and never ask a user to run with
 `--no-verify`. Any change to guard behavior must:
